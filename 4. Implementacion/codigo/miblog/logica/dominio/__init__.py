@@ -1,0 +1,1 @@
+"""Entidades del Dominio: entidades, enumeraciones y errores de negocio. No depende de la base de datos."""

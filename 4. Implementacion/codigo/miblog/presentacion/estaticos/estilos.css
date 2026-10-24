@@ -1,0 +1,676 @@
+/* ==========================================================================
+   Hoja de estilos propia de MiBlog.
+   Escrita a mano: sin Tailwind, sin hojas por CDN, sin JavaScript (RNF31).
+   Los valores salen del diseño visual () y están todos
+   acá arriba, en :root. Para cambiar el aspecto de la aplicación se cambia
+   una variable, no cada regla.
+
+   Índice
+     1. Variables
+     2. Base
+     3. Estructura de página (pagina, panel, seccion, barra)
+     4. Texto (sobretitulo, titulo, texto)
+     5. Formularios (campo, redactor, contador, selector-foto)
+     6. Botones
+     7. Avatares
+     8. Tarjetas (mensajes y resultados de búsqueda)
+     9. Avisos y estados vacíos
+    10. Diálogos
+   ========================================================================== */
+
+
+/* 1. Variables -------------------------------------------------------------- */
+
+:root {
+  /* Colores */
+  --color-fondo: #E4DFD5;        /* fondo de la página */
+  --color-superficie: #EDE9E0;   /* paneles y diálogos */
+  --color-campo: #E4DFD5;        /* campos, tarjetas y avisos (sobre la superficie) */
+  --color-borde: #ADA598;
+  --color-tinta: #1C1814;        /* títulos, botones primarios, texto fuerte */
+  --color-texto: #453E36;        /* texto corriente */
+  --color-suave: #645C51;        /* etiquetas, fechas, ayudas */
+  --color-sobre-tinta: #EDE9E0;  /* texto sobre un botón primario */
+  --color-velo: #C7C2B8;         /* fondo oscurecido detrás de un diálogo */
+
+  /* Tipografía */
+  --fuente-cuerpo: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --tam-etiqueta: 11px;
+  --tam-meta: 12px;
+  --tam-meta-grande: 12.5px;
+  --tam-cuerpo: 14px;
+  --tam-boton-chico: 12.5px;
+  --tam-boton-mediano: 13.5px;
+  --tam-marca: 18px;
+  --tam-titulo-dialogo: 19px;
+  --tam-titulo: 24px;
+  --interlineado: 1.5;
+
+  /* Escala de espaciado */
+  --esp-1: 4px;
+  --esp-2: 6px;
+  --esp-3: 8px;
+  --esp-4: 12px;
+  --esp-5: 16px;
+  --esp-6: 20px;
+  --esp-7: 24px;
+  --esp-8: 32px;
+  --esp-9: 48px;
+
+  /* Bordes y sombras */
+  --radio: 18px;
+  --borde: 1px solid var(--color-borde);
+  --sombra: none;                /* el diseño no usa sombras */
+
+  /* Anchos */
+  --ancho-pagina: 1080px;
+  --ancho-formulario: 380px;
+  --ancho-formulario-ancho: 460px;
+  --ancho-dialogo: 440px;
+
+  /* Imágenes (SVG embebidos: no hace falta ningún archivo ni ninguna descarga) */
+  --img-avatar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cdefs%3E%3Cpattern id='a' width='4' height='4' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='2' cy='2' r='1' fill='%231C1814'/%3E%3C/pattern%3E%3Cpattern id='b' width='2.2' height='2.2' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='1.1' cy='1.1' r='1' fill='%231C1814'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='44' height='44' fill='%23EDE9E0'/%3E%3Crect width='44' height='44' fill='url(%23a)'/%3E%3Cpath d='M22 6a7 7 0 100 14 7 7 0 000-14zM10 40c0-7 5-12 12-12s12 5 12 12' fill='url(%23b)'/%3E%3C/svg%3E");
+  --img-camara: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30' shape-rendering='crispEdges'%3E%3Cpath fill='%23645C51' d='M7.5 0h3.75v3.75h-3.75zM11.25 0h3.75v3.75h-3.75zM15 0h3.75v3.75h-3.75zM18.75 0h3.75v3.75h-3.75zM3.75 3.75h3.75v3.75h-3.75zM22.5 3.75h3.75v3.75h-3.75zM0 7.5h3.75v3.75h-3.75zM3.75 7.5h3.75v3.75h-3.75zM22.5 7.5h3.75v3.75h-3.75zM26.25 7.5h3.75v3.75h-3.75zM0 11.25h3.75v3.75h-3.75zM7.5 11.25h3.75v3.75h-3.75zM11.25 11.25h3.75v3.75h-3.75zM15 11.25h3.75v3.75h-3.75zM18.75 11.25h3.75v3.75h-3.75zM26.25 11.25h3.75v3.75h-3.75zM0 15h3.75v3.75h-3.75zM7.5 15h3.75v3.75h-3.75zM18.75 15h3.75v3.75h-3.75zM26.25 15h3.75v3.75h-3.75zM0 18.75h3.75v3.75h-3.75zM7.5 18.75h3.75v3.75h-3.75zM11.25 18.75h3.75v3.75h-3.75zM15 18.75h3.75v3.75h-3.75zM18.75 18.75h3.75v3.75h-3.75zM26.25 18.75h3.75v3.75h-3.75zM0 22.5h3.75v3.75h-3.75zM3.75 22.5h3.75v3.75h-3.75zM22.5 22.5h3.75v3.75h-3.75zM26.25 22.5h3.75v3.75h-3.75zM7.5 26.25h3.75v3.75h-3.75zM11.25 26.25h3.75v3.75h-3.75zM15 26.25h3.75v3.75h-3.75zM18.75 26.25h3.75v3.75h-3.75z'/%3E%3C/svg%3E");
+  --img-lupa: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' shape-rendering='crispEdges'%3E%3Cpath fill='%23645C51' d='M8 0h4v4h-4zM12 0h4v4h-4zM16 0h4v4h-4zM4 4h4v4h-4zM20 4h4v4h-4zM0 8h4v4h-4zM24 8h4v4h-4zM0 12h4v4h-4zM24 12h4v4h-4zM0 16h4v4h-4zM24 16h4v4h-4zM4 20h4v4h-4zM20 20h4v4h-4zM8 24h4v4h-4zM12 24h4v4h-4zM16 24h4v4h-4zM24 24h4v4h-4zM20 28h4v4h-4zM28 28h4v4h-4z'/%3E%3C/svg%3E");
+  --img-grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.11  0 0 0 0 0.095  0 0 0 0 0.078  0 0 0 0.85 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+
+/* 2. Base ------------------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--fuente-cuerpo);
+  font-size: var(--tam-cuerpo);
+  line-height: var(--interlineado);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Textura de papel del diseño. Si no gusta, se borra esta regla y listo. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-image: var(--img-grano);
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+a {
+  color: var(--color-tinta);
+  text-decoration: underline;
+}
+
+a:hover {
+  color: var(--color-texto);
+}
+
+/* El diseño original apagaba el contorno de foco. Acá se conserva, porque sin
+   él no se ve dónde está el cursor cuando se navega con el teclado. */
+:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--color-suave);
+  opacity: 1;
+}
+
+
+/* 3. Estructura de página --------------------------------------------------- */
+
+.pagina {
+  max-width: var(--ancho-pagina);
+  margin: 0 auto;
+  padding: var(--esp-9) var(--esp-7) 80px;
+}
+
+/* El recuadro grande que contiene cada pantalla */
+.panel {
+  background: var(--color-superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+/* Cuerpo de las pantallas con un solo contenido centrado:
+   inicio de sesión, registro, confirmación de cierre de sesión. */
+.panel__cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-7);
+  padding: var(--esp-9) var(--esp-8);
+}
+
+/* Tramos del tablón y de la búsqueda (publicar, listado, resultados) */
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+  padding: var(--esp-7) var(--esp-8);
+}
+
+.seccion + .seccion {
+  border-top: var(--borde);
+}
+
+/* Barra superior (solo con sesión iniciada) */
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-5);
+  padding: var(--esp-5) var(--esp-8);
+  border-bottom: var(--borde);
+}
+
+.barra__marca {
+  font-family: var(--fuente-mono);
+  font-size: var(--tam-marca);
+  font-weight: 700;
+  color: var(--color-tinta);
+  text-decoration: none;
+}
+
+.barra__marca:hover {
+  color: var(--color-tinta);
+}
+
+.barra__menu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp-5);
+}
+
+.barra__usuario {
+  font-size: var(--tam-boton-mediano);
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+.barra__enlace {
+  font-size: 13px;
+  color: var(--color-texto);
+}
+
+
+/* 4. Texto ------------------------------------------------------------------ */
+
+/* Rótulo chico en mayúsculas que va arriba de un título o de una sección */
+.sobretitulo {
+  margin: 0;
+  font-size: var(--tam-etiqueta);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-suave);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--fuente-mono);
+  font-size: var(--tam-titulo);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-tinta);
+}
+
+.titulo--dialogo {
+  font-size: var(--tam-titulo-dialogo);
+}
+
+.texto {
+  margin: 0;
+  font-size: var(--tam-boton-mediano);
+  line-height: var(--interlineado);
+  color: var(--color-texto);
+}
+
+.texto--chico {
+  font-size: var(--tam-meta-grande);
+}
+
+.centrado {
+  text-align: center;
+}
+
+
+/* 5. Formularios ------------------------------------------------------------ */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-6);
+  width: 100%;
+  max-width: var(--ancho-formulario);
+}
+
+.formulario--ancho {
+  max-width: var(--ancho-formulario-ancho);
+}
+
+/* Un campo = etiqueta + entrada + (opcional) mensaje de ayuda o de error */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-2);
+}
+
+.campo__etiqueta {
+  font-size: var(--tam-etiqueta);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-suave);
+}
+
+.campo__entrada {
+  width: 100%;
+  padding: 13px var(--esp-6);
+  background: var(--color-campo);
+  border: var(--borde);
+  border-radius: var(--radio);
+  font-family: inherit;
+  font-size: var(--tam-cuerpo);
+  color: var(--color-tinta);
+}
+
+textarea.campo__entrada {
+  resize: none;
+}
+
+.campo__entrada:disabled {
+  color: var(--color-suave);
+}
+
+/* Mensaje debajo de un campo (error de validación, ayuda) */
+.campo__mensaje {
+  padding-left: var(--esp-2);
+  font-size: var(--tam-meta);
+  color: var(--color-texto);
+}
+
+.campo__archivo {
+  font-family: inherit;
+  font-size: var(--tam-meta-grande);
+  color: var(--color-texto);
+}
+
+/* Dos campos lado a lado (clave y repetir clave) */
+.campos-en-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--esp-5);
+}
+
+/* Foto de perfil: círculo de adorno + etiqueta y selector de archivo.
+   El círculo es solo decorativo: sin JavaScript no puede mostrar la foto elegida. */
+.selector-foto {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-5);
+}
+
+.selector-foto__circulo {
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  border: 1px dashed var(--color-borde);
+  border-radius: 50%;
+  background: var(--img-camara) center / 30px 30px no-repeat;
+}
+
+/* Cuadro de redacción del mensaje (tablón y diálogo de edición) */
+.redactor {
+  padding: var(--esp-5) var(--esp-6);
+  background: var(--color-campo);
+  border: var(--borde);
+  border-radius: var(--radio);
+}
+
+.redactor:focus-within {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 2px;
+}
+
+.redactor__texto {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: var(--tam-cuerpo);
+  line-height: var(--interlineado);
+  color: var(--color-tinta);
+}
+
+.redactor__pie {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp-5);
+  margin-top: var(--esp-3);
+}
+
+/* Caracteres restantes (RNF15). Lo actualiza contador.js. */
+.contador {
+  font-family: var(--fuente-mono);
+  font-size: var(--tam-meta);
+  color: var(--color-suave);
+}
+
+/* Fila de botones al pie de un formulario o de un diálogo */
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+}
+
+.acciones--bloque > * {
+  flex: 1;
+}
+
+/* Búsqueda: campo + botón en una línea */
+.busqueda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  max-width: var(--ancho-formulario-ancho);
+}
+
+.busqueda .campo__entrada {
+  flex: 1;
+  width: auto;
+  min-width: 180px;
+}
+
+
+/* 6. Botones ---------------------------------------------------------------- */
+/* Sirven para <button>, <a> y <span>: un enlace que lleva a un diálogo se ve
+   igual que un botón que envía un formulario. */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px var(--esp-7);
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  font-family: inherit;
+  font-size: var(--tam-cuerpo);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton--primario {
+  background: var(--color-tinta);
+  border-color: var(--color-tinta);
+  color: var(--color-sobre-tinta);
+}
+
+.boton--secundario {
+  background: transparent;
+  border-color: var(--color-borde);
+  color: var(--color-tinta);
+}
+
+/* Los :hover llevan el color a propósito: sin ellos, a:hover le gana a la
+   clase y el texto de un enlace con aspecto de botón cambiaría de color. */
+.boton--primario:hover {
+  background: var(--color-texto);
+  border-color: var(--color-texto);
+  color: var(--color-sobre-tinta);
+}
+
+.boton--secundario:hover {
+  border-color: var(--color-tinta);
+  color: var(--color-tinta);
+}
+
+.boton--mediano {
+  padding: 10px var(--esp-7);
+  font-size: var(--tam-boton-mediano);
+}
+
+.boton--chico {
+  padding: 7px var(--esp-5);
+  font-size: var(--tam-boton-chico);
+}
+
+/* Etiqueta con forma de botón pero sin acción ("Siguiendo", H4) */
+.boton--estado {
+  font-weight: 700;
+  cursor: default;
+}
+
+.boton--estado:hover {
+  border-color: var(--color-borde);
+}
+
+
+/* 7. Avatares --------------------------------------------------------------- */
+/* Sirve para <img> (foto del usuario) y para <span> vacío (foto por defecto). */
+
+.avatar {
+  flex-shrink: 0;
+  display: block;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--img-avatar) center / cover no-repeat;
+}
+
+.avatar--mediano {
+  width: 38px;
+  height: 38px;
+}
+
+.avatar--chico {
+  width: 34px;
+  height: 34px;
+}
+
+
+/* 8. Tarjetas --------------------------------------------------------------- */
+/* Un mensaje del tablón y una fila de resultado de búsqueda usan la misma. */
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tarjeta {
+  display: flex;
+  gap: var(--esp-5);
+  padding: var(--esp-5) var(--esp-6);
+  background: var(--color-campo);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta__cuerpo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--esp-2);
+  min-width: 0;
+}
+
+.tarjeta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp-3);
+}
+
+.tarjeta__nombre {
+  font-size: var(--tam-cuerpo);
+  font-weight: 700;
+  color: var(--color-tinta);
+}
+
+.tarjeta__usuario {
+  font-size: var(--tam-meta-grande);
+  color: var(--color-suave);
+}
+
+.tarjeta__fecha {
+  font-size: var(--tam-meta);
+  color: var(--color-suave);
+}
+
+.tarjeta__editado {
+  font-size: var(--tam-meta);
+  font-style: italic;
+  color: var(--color-suave);
+}
+
+.tarjeta__texto {
+  margin: 0;
+  font-size: var(--tam-cuerpo);
+  line-height: var(--interlineado);
+  color: var(--color-texto);
+  overflow-wrap: anywhere;   /* una URL larga no tiene que romper la tarjeta */
+}
+
+.tarjeta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp-4);
+  margin-top: var(--esp-2);
+}
+
+/* Tarjeta de resultado de búsqueda: avatar, nombres y botón a la derecha */
+.tarjeta--resultado {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Republicación: "X republicó" arriba y el mensaje original adentro */
+.tarjeta--republicacion {
+  flex-direction: column;
+  gap: var(--esp-4);
+}
+
+.tarjeta__republico {
+  margin: 0;
+  font-size: var(--tam-meta);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-suave);
+}
+
+.tarjeta__original {
+  display: flex;
+  gap: var(--esp-5);
+  padding: var(--esp-4) var(--esp-5);
+  border: var(--borde);
+  border-radius: var(--radio);
+}
+
+
+/* 9. Avisos y estados vacíos ------------------------------------------------ */
+
+/* Contenedor de los mensajes que llegan con flash() */
+.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-3);
+  padding: var(--esp-5) var(--esp-8) 0;
+}
+
+.aviso {
+  padding: var(--esp-4) var(--esp-5);
+  background: var(--color-campo);
+  border: var(--borde);
+  border-radius: var(--radio);
+  font-size: var(--tam-meta-grande);
+  color: var(--color-texto);
+  text-align: center;
+}
+
+.aviso--error {
+  border-color: var(--color-tinta);
+}
+
+/* Sin resultados / tablón vacío */
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-4);
+  padding: var(--esp-7);
+  border: var(--borde);
+  border-radius: var(--radio);
+  text-align: center;
+  font-size: var(--tam-boton-mediano);
+  color: var(--color-suave);
+}
+
+.vacio::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background: var(--img-lupa) center / contain no-repeat;
+}
+
+.vacio p {
+  margin: 0;
+}
+
+
+/* 10. Diálogos -------------------------------------------------------------- */
+/* Edición y borrado son páginas propias (H9). Se ven como una tarjeta sobre
+   el fondo oscurecido: el diseño los dibuja así, encima del tablón. */
+
+.cuerpo-dialogo {
+  background: var(--color-velo);
+}
+
+.cuerpo-dialogo .pagina {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--esp-7);
+}
+
+.dialogo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-5);
+  width: 100%;
+  max-width: var(--ancho-dialogo);
+  padding: var(--esp-8);
+  background: var(--color-superficie);
+  border: var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}MiBlog{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body class="{% block clase_cuerpo %}{% endblock %}">
+  <main class="pagina">
+    {# Los diálogos reemplazan este bloque entero: no tienen panel ni barra. #}
+    {% block panel %}
+    <div class="panel">
+
+      {# Barra superior: solo existe cuando GuardiaSesion dejó un usuario en g.usuario. #}
+      {% block barra %}
+        {% if g.usuario %}
+        <header class="barra">
+          <a class="barra__marca" href="/tablon">MiBlog</a>
+          <nav class="barra__menu">
+            {% if g.usuario.url_foto %}
+              <img class="avatar avatar--chico" src="{{ url_for('static', filename='fotos/' ~ g.usuario.url_foto) }}" alt="">
+            {% else %}
+              <span class="avatar avatar--chico" aria-hidden="true"></span>
+            {% endif %}
+            <span class="barra__usuario">{{ g.usuario.nombre_completo }}</span>
+            <a class="barra__enlace" href="/usuarios/buscar">Buscar usuarios</a>
+            <a class="boton boton--secundario boton--mediano" href="/sesion/cerrar">Cerrar sesión</a>
+          </nav>
+        </header>
+        {% endif %}
+      {% endblock %}
+
+      {# Avisos de flash(): errores de negocio y confirmaciones (RNF16). Jinja2 escapa el HTML solo. #}
+      {% with avisos = get_flashed_messages(with_categories=true) %}
+        {% if avisos %}
+        <div class="avisos">
+          {% for categoria, aviso in avisos %}
+            <p class="aviso aviso--{{ categoria }}" role="status">{{ aviso }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block contenido %}{% endblock %}
+    </div>
+    {% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

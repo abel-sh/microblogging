@@ -1,0 +1,14 @@
+# Secretos y configuración local
+.env
+
+# Datos generados al ejecutar (capa de persistencia)
+instance/
+miblog/presentacion/estaticos/fotos/
+
+# Python
+__pycache__/
+venv/
+.venv/
+
+# Editor
+.vscode/
