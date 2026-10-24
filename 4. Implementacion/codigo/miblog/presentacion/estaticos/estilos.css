@@ -1,11 +1,12 @@
 /* ==========================================================================
    Hoja de estilos propia de MiBlog.
    Escrita a mano: sin Tailwind, sin hojas por CDN, sin JavaScript (RNF31).
-   Los valores salen del diseño visual () y están todos
+   Los valores salen del diseño visual (Registro_UI_mockups) y están todos
    acá arriba, en :root. Para cambiar el aspecto de la aplicación se cambia
    una variable, no cada regla.
 
    Índice
+     0. Fuentes (@font-face)
      1. Variables
      2. Base
      3. Estructura de página (pagina, panel, seccion, barra)
@@ -17,6 +18,53 @@
      9. Avisos y estados vacíos
     10. Diálogos
    ========================================================================== */
+
+
+/* 0. Fuentes ---------------------------------------------------------------- */
+/* Los archivos están en estaticos/fuentes/, así que no se le pide nada a
+   Google ni a ningún CDN. Solo se declaran los pesos que usa esta hoja:
+   Space Grotesk 400, 600 y 700; Martian Mono 400 y 700. Si se usa otro peso,
+   hay que agregar su archivo y su @font-face. */
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("fuentes/space-grotesk-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("fuentes/space-grotesk-600.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("fuentes/space-grotesk-700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Martian Mono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("fuentes/martian-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Martian Mono";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("fuentes/martian-mono-700.woff2") format("woff2");
+}
 
 
 /* 1. Variables -------------------------------------------------------------- */
@@ -33,7 +81,7 @@
   --color-sobre-tinta: #EDE9E0;  /* texto sobre un botón primario */
   --color-velo: #C7C2B8;         /* fondo oscurecido detrás de un diálogo */
 
-  /* Tipografía */
+  /* Tipografía (las familias vienen de la sección 0; el resto es respaldo) */
   --fuente-cuerpo: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --fuente-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 

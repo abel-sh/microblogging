@@ -1,0 +1,11 @@
+Fuentes incluidas en MiBlog (se sirven desde acá, sin pedirle nada a Google).
+
+  Space Grotesk  - texto general        (pesos 400, 600 y 700)
+  Martian Mono   - títulos y contador   (pesos 400 y 700)
+
+Licencia de las dos: SIL Open Font License 1.1 (permite usarlas y redistribuirlas
+dentro de un proyecto, siempre que se conserve el texto de la licencia).
+Los textos completos están en LICENCIA-SpaceGrotesk.txt y LICENCIA-MartianMono.txt.
+
+Los archivos son el subconjunto "latin" (incluye tildes, la ñ y los signos ¿ ¡),
+en formato woff2. Se declaran en estilos.css con @font-face.
