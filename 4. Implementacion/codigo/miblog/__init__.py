@@ -2,23 +2,34 @@
 
 crear_app() es el único módulo que conoce las cuatro capas: crea los
 repositorios, se los da a los controles, les da los controles a las vistas y
-registra las rutas. En el bloque 4.1 todavía no hay nada de eso: solo la
-configuración, la conexión a la base, el comando iniciar-bd y una página
-provisoria.
+registra las rutas. En el bloque 4.2 están las rutas de la sesión: registro,
+inicio y cierre de sesión (CU0001, CU0002, CU0003).
 """
 
 from __future__ import annotations
 
 import os
+from datetime import timedelta
 
 import click
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flask import Flask
 
+from miblog.acceso_datos.almacen_fotos import AlmacenFotos
 from miblog.acceso_datos.conexion import (
     BaseYaInicializadaError,
     cerrar_conexion,
     inicializar_base,
+)
+from miblog.acceso_datos.repositorio_sesiones import RepositorioSesiones
+from miblog.acceso_datos.repositorio_usuarios import RepositorioUsuarios
+from miblog.logica.gestion_usuarios.control_autenticacion import ControlAutenticacion
+from miblog.logica.gestion_usuarios.control_registro import ControlRegistro
+from miblog.presentacion.seguridad_web import GuardiaSesion
+from miblog.presentacion.vistas_usuarios import (
+    VistaConfirmacionCierreSesion,
+    VistaInicioSesion,
+    VistaRegistro,
 )
 
 
@@ -47,6 +58,12 @@ def crear_app() -> Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_HTTPONLY"] = True
 
+    # Fotos de perfil (ca 1.3): tamaño máximo configurable. MAX_CONTENT_LENGTH es el
+    # tope duro de Flask para toda la petición, un poco por encima del de la foto.
+    tamano_maximo_foto = int(os.environ.get("TAMANO_MAXIMO_FOTO_BYTES", str(2 * 1024 * 1024)))
+    app.config["TAMANO_MAXIMO_FOTO_BYTES"] = tamano_maximo_foto
+    app.config["MAX_CONTENT_LENGTH"] = tamano_maximo_foto + 1024 * 1024
+
     # --- Carpeta instance/ y base de datos (capa de persistencia) ---
     os.makedirs(app.instance_path, exist_ok=True)
     ruta_base = os.environ.get("BASE_DE_DATOS", "miblog.sqlite3")
@@ -67,12 +84,37 @@ def crear_app() -> Flask:
             raise click.ClickException(str(error))
         click.echo(f"Base creada en {app.config['BASE_DE_DATOS']}")
 
-    # --- Página provisoria del bloque 4.1 ---
-    # El diseño no tiene ninguna ruta que muestre una página sin un caso de uso
-    # (la primera es GET /, de CU0002). Esta se reemplaza en el bloque 4.2.
-    @app.get("/")
-    def inicio_provisorio():
-        return render_template("inicio_provisorio.html")
+    # --- Capa 3: repositorios y almacén de fotos ---
+    repo_usuarios = RepositorioUsuarios()
+    repo_sesiones = RepositorioSesiones()
+    almacen_fotos = AlmacenFotos(os.path.join(app.static_folder, "fotos"))
+
+    # --- Capa 2: controles ---
+    control_registro = ControlRegistro(repo_usuarios, almacen_fotos, tamano_maximo_foto)
+    control_autenticacion = ControlAutenticacion(
+        repo_usuarios,
+        repo_sesiones,
+        timedelta(minutes=app.config["DURACION_SESION_MINUTOS"]),
+    )
+
+    # --- Capa 1: guardia y vistas ---
+    # La guardia todavía no envuelve ninguna ruta: la primera ruta protegida
+    # (GET /tablon) llega en el bloque 4.4.
+    guardia = GuardiaSesion(control_autenticacion)
+    vista_inicio_sesion = VistaInicioSesion(control_autenticacion)
+    vista_registro = VistaRegistro(control_registro)
+    vista_cierre = VistaConfirmacionCierreSesion(control_autenticacion)
+
+    # --- Rutas Ninguna de estas pasa por la guardia. ---
+    app.add_url_rule("/", "inicio_sesion", vista_inicio_sesion.mostrar)
+    app.add_url_rule("/sesion/iniciar", "iniciar_sesion", vista_inicio_sesion.iniciar_sesion,
+                     methods=["POST"])
+    app.add_url_rule("/registro", "registro", vista_registro.mostrar)
+    app.add_url_rule("/registro", "registrar", vista_registro.registrar, methods=["POST"])
+    app.add_url_rule("/sesion/cerrar", "solicitar_cierre_sesion",
+                     vista_cierre.solicitar_confirmacion)
+    app.add_url_rule("/sesion/cerrar", "confirmar_cierre_sesion", vista_cierre.confirmar,
+                     methods=["POST"])
 
     return app
 
