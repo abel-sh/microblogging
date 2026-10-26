@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block titulo %}Buscar usuarios · MiBlog{% endblock %}
+
+{% block contenido %}
+<section class="seccion" aria-labelledby="titulo-busqueda">
+  <p class="sobretitulo">04 // Búsqueda</p>
+  <h1 class="titulo" id="titulo-busqueda">Buscar usuarios</h1>
+
+  {# GET: el criterio viaja en la URL, así se puede recargar y volver a esta misma búsqueda.
+     Sin "required": si el campo está vacío, el que decide es el servidor (ca 14.1). #}
+  <form class="busqueda" method="get" action="/usuarios/buscar" role="search">
+    <input class="campo__entrada" type="text" name="criterio" value="{{ criterio }}"
+           placeholder="Nombre de usuario o nombre completo"
+           aria-label="Nombre de usuario o nombre completo" autofocus>
+    <button class="boton boton--primario" type="submit">Buscar</button>
+  </form>
+
+  {# resultados es None si todavía no se buscó, y una lista (quizá vacía) si se buscó. #}
+  {% if resultados is none %}
+    <p class="texto texto--chico">Buscá por nombre de usuario o por nombre completo. No importan las mayúsculas ni los acentos.</p>
+  {% elif not resultados %}
+    <div class="vacio">
+      <p>No se encontraron usuarios.</p>
+      <p>Revisá el criterio de búsqueda.</p>
+    </div>
+  {% else %}
+    <ul class="lista">
+      {% for resultado in resultados %}
+      <li class="tarjeta tarjeta--resultado">
+        {% if resultado.url_foto %}
+          <img class="avatar avatar--mediano" src="{{ url_for('static', filename='fotos/' ~ resultado.url_foto) }}" alt="">
+        {% else %}
+          <span class="avatar avatar--mediano" aria-hidden="true"></span>
+        {% endif %}
+
+        <div class="tarjeta__cuerpo">
+          <div class="tarjeta__cabecera">
+            <span class="tarjeta__nombre">{{ resultado.nombre_completo }}</span>
+            <span class="tarjeta__usuario">@{{ resultado.nombre_usuario }}</span>
+          </div>
+        </div>
+
+        {# Esconder el botón NO es el control: ControlSeguimiento vuelve a verificar todo (ca 11.2). #}
+        {% if resultado.id_usuario == g.usuario.id_usuario %}
+          {# Uno mismo: no se ofrece ninguna acción. #}
+        {% elif resultado.lo_sigue %}
+          {# H4: "Dejar de seguir" es CU0012, fuera de alcance. Solo la marca, sin acción. #}
+          <span class="boton boton--secundario boton--chico boton--estado">Siguiendo</span>
+        {% else %}
+          <form method="post" action="/usuarios/{{ resultado.id_usuario }}/seguir">
+            <input type="hidden" name="criterio" value="{{ criterio }}">
+            <button class="boton boton--primario boton--chico" type="submit">Seguir</button>
+          </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}
