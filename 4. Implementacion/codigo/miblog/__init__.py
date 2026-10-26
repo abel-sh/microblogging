@@ -3,7 +3,8 @@
 crear_app() es el único módulo que conoce las cuatro capas: crea los
 repositorios, se los da a los controles, les da los controles a las vistas y
 registra las rutas. En el bloque 4.2 están las rutas de la sesión: registro,
-inicio y cierre de sesión (CU0001, CU0002, CU0003).
+inicio y cierre de sesión (CU0001, CU0002, CU0003). En el bloque 4.3 se suman
+las primeras rutas protegidas: buscar usuarios y seguirlos (CU0014, CU0011).
 """
 
 from __future__ import annotations
@@ -21,11 +22,15 @@ from miblog.acceso_datos.conexion import (
     cerrar_conexion,
     inicializar_base,
 )
+from miblog.acceso_datos.repositorio_seguimientos import RepositorioSeguimientos
 from miblog.acceso_datos.repositorio_sesiones import RepositorioSesiones
 from miblog.acceso_datos.repositorio_usuarios import RepositorioUsuarios
+from miblog.logica.gestion_relaciones.control_busqueda_usuarios import ControlBusquedaUsuarios
+from miblog.logica.gestion_relaciones.control_seguimiento import ControlSeguimiento
 from miblog.logica.gestion_usuarios.control_autenticacion import ControlAutenticacion
 from miblog.logica.gestion_usuarios.control_registro import ControlRegistro
 from miblog.presentacion.seguridad_web import GuardiaSesion
+from miblog.presentacion.vistas_relaciones import VistaBusquedaUsuarios
 from miblog.presentacion.vistas_usuarios import (
     VistaConfirmacionCierreSesion,
     VistaInicioSesion,
@@ -87,6 +92,7 @@ def crear_app() -> Flask:
     # --- Capa 3: repositorios y almacén de fotos ---
     repo_usuarios = RepositorioUsuarios()
     repo_sesiones = RepositorioSesiones()
+    repo_seguimientos = RepositorioSeguimientos()
     almacen_fotos = AlmacenFotos(os.path.join(app.static_folder, "fotos"))
 
     # --- Capa 2: controles ---
@@ -96,16 +102,19 @@ def crear_app() -> Flask:
         repo_sesiones,
         timedelta(minutes=app.config["DURACION_SESION_MINUTOS"]),
     )
+    control_busqueda = ControlBusquedaUsuarios(repo_usuarios, repo_seguimientos)
+    control_seguimiento = ControlSeguimiento(repo_usuarios, repo_seguimientos)
 
     # --- Capa 1: guardia y vistas ---
-    # La guardia todavía no envuelve ninguna ruta: la primera ruta protegida
-    # (GET /tablon) llega en el bloque 4.4.
+    # Desde el bloque 4.3 la guardia envuelve las rutas de buscar y seguir. Las
+    # demás rutas protegidas (empezando por GET /tablon) llegan en el bloque 4.4.
     guardia = GuardiaSesion(control_autenticacion)
     vista_inicio_sesion = VistaInicioSesion(control_autenticacion)
     vista_registro = VistaRegistro(control_registro)
     vista_cierre = VistaConfirmacionCierreSesion(control_autenticacion)
+    vista_busqueda = VistaBusquedaUsuarios(control_busqueda, control_seguimiento)
 
-    # --- Rutas Ninguna de estas pasa por la guardia. ---
+    # --- Rutas públicas: ninguna de estas pasa por la guardia (DISEÑO §2.5). ---
     app.add_url_rule("/", "inicio_sesion", vista_inicio_sesion.mostrar)
     app.add_url_rule("/sesion/iniciar", "iniciar_sesion", vista_inicio_sesion.iniciar_sesion,
                      methods=["POST"])
@@ -115,6 +124,12 @@ def crear_app() -> Flask:
                      vista_cierre.solicitar_confirmacion)
     app.add_url_rule("/sesion/cerrar", "confirmar_cierre_sesion", vista_cierre.confirmar,
                      methods=["POST"])
+
+    # --- Rutas protegidas: sin sesión vigente, la guardia redirige al inicio. ---
+    app.add_url_rule("/usuarios/buscar", "buscar_usuarios",
+                     guardia.requiere_sesion(vista_busqueda.buscar))
+    app.add_url_rule("/usuarios/<int:id_seguido>/seguir", "seguir_usuario",
+                     guardia.requiere_sesion(vista_busqueda.seguir), methods=["POST"])
 
     return app
 
