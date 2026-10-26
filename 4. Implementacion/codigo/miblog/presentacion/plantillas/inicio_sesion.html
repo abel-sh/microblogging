@@ -12,7 +12,7 @@
     <div class="campo">
       <label class="campo__etiqueta" for="nombre_usuario">Usuario</label>
       <input class="campo__entrada" id="nombre_usuario" name="nombre_usuario" type="text"
-             value="{{ valores.get('nombre_usuario', '') }}" placeholder="tu.usuario"
+             value="{{ valores.get('nombre_usuario', '') }}" placeholder="Tu nombre de usuario"
              autocomplete="username" autofocus>
       {% if errores.get('nombre_usuario') %}
         <span class="campo__mensaje">{{ errores['nombre_usuario'] }}</span>
@@ -23,7 +23,7 @@
       <label class="campo__etiqueta" for="clave">Clave</label>
       {# type="password": la clave se ve enmascarada (rnf 2.1). Nunca se vuelve a escribir en el value. #}
       <input class="campo__entrada" id="clave" name="clave" type="password"
-             autocomplete="current-password">
+             placeholder="Tu clave" autocomplete="current-password">
       {% if errores.get('clave') %}
         <span class="campo__mensaje">{{ errores['clave'] }}</span>
       {% endif %}

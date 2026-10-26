@@ -13,8 +13,10 @@
 
     <div class="campo">
       <label class="campo__etiqueta" for="nombre_usuario">Nombre de usuario</label>
+      {# Los textos de ayuda "Hasta 15" y "Mínimo 8" copian los límites del rnf 1.1. #}
       <input class="campo__entrada" id="nombre_usuario" name="nombre_usuario" type="text"
-             value="{{ valores.get('nombre_usuario', '') }}" autocomplete="username">
+             value="{{ valores.get('nombre_usuario', '') }}" placeholder="Hasta 15 caracteres"
+             autocomplete="username">
       {% if errores.get('nombre_usuario') %}
         <span class="campo__mensaje">{{ errores['nombre_usuario'] }}</span>
       {% endif %}
@@ -23,7 +25,8 @@
     <div class="campo">
       <label class="campo__etiqueta" for="email">Correo electrónico</label>
       <input class="campo__entrada" id="email" name="email" type="email"
-             value="{{ valores.get('email', '') }}" autocomplete="email">
+             value="{{ valores.get('email', '') }}" placeholder="nombre@empresa.com"
+             autocomplete="email">
       {% if errores.get('email') %}
         <span class="campo__mensaje">{{ errores['email'] }}</span>
       {% endif %}
@@ -33,7 +36,7 @@
       <div class="campo">
         <label class="campo__etiqueta" for="clave">Clave</label>
         <input class="campo__entrada" id="clave" name="clave" type="password"
-               autocomplete="new-password">
+               placeholder="Mínimo 8 caracteres" autocomplete="new-password">
         {% if errores.get('clave') %}
           <span class="campo__mensaje">{{ errores['clave'] }}</span>
         {% endif %}
@@ -41,7 +44,7 @@
       <div class="campo">
         <label class="campo__etiqueta" for="confirmacion_clave">Repetir clave</label>
         <input class="campo__entrada" id="confirmacion_clave" name="confirmacion_clave"
-               type="password" autocomplete="new-password">
+               type="password" placeholder="Repetí la clave" autocomplete="new-password">
         {% if errores.get('confirmacion_clave') %}
           <span class="campo__mensaje">{{ errores['confirmacion_clave'] }}</span>
         {% endif %}
@@ -51,7 +54,8 @@
     <div class="campo">
       <label class="campo__etiqueta" for="nombre_completo">Nombre completo</label>
       <input class="campo__entrada" id="nombre_completo" name="nombre_completo" type="text"
-             value="{{ valores.get('nombre_completo', '') }}" autocomplete="name">
+             value="{{ valores.get('nombre_completo', '') }}" placeholder="Nombre y apellido"
+             autocomplete="name">
       {% if errores.get('nombre_completo') %}
         <span class="campo__mensaje">{{ errores['nombre_completo'] }}</span>
       {% endif %}
@@ -60,7 +64,7 @@
     <div class="campo">
       <label class="campo__etiqueta" for="descripcion">Descripción breve (opcional)</label>
       <textarea class="campo__entrada" id="descripcion" name="descripcion"
-                rows="3">{{ valores.get('descripcion', '') }}</textarea>
+                rows="3" placeholder="Una frase sobre vos">{{ valores.get('descripcion', '') }}</textarea>
     </div>
 
     <div class="campo">
