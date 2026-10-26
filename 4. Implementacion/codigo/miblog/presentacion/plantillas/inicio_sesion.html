@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block titulo %}Iniciar sesión · MiBlog{% endblock %}
+
+{% block contenido %}
+<div class="panel__cuerpo">
+  <p class="sobretitulo">01 // Acceso</p>
+  <h1 class="titulo">MiBlog</h1>
+
+  {# novalidate: el navegador no valida nada; los errores los decide el servidor (ca 2.2). #}
+  <form class="formulario" method="post" action="/sesion/iniciar" novalidate>
+    <div class="campo">
+      <label class="campo__etiqueta" for="nombre_usuario">Usuario</label>
+      <input class="campo__entrada" id="nombre_usuario" name="nombre_usuario" type="text"
+             value="{{ valores.get('nombre_usuario', '') }}" placeholder="tu.usuario"
+             autocomplete="username" autofocus>
+      {% if errores.get('nombre_usuario') %}
+        <span class="campo__mensaje">{{ errores['nombre_usuario'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      <label class="campo__etiqueta" for="clave">Clave</label>
+      {# type="password": la clave se ve enmascarada (rnf 2.1). Nunca se vuelve a escribir en el value. #}
+      <input class="campo__entrada" id="clave" name="clave" type="password"
+             autocomplete="current-password">
+      {% if errores.get('clave') %}
+        <span class="campo__mensaje">{{ errores['clave'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="acciones acciones--bloque">
+      <button class="boton boton--primario" type="submit">Entrar</button>
+    </div>
+  </form>
+
+  <p class="texto texto--chico centrado">¿No tenés cuenta? <a href="/registro">Registrate</a></p>
+</div>
+{% endblock %}

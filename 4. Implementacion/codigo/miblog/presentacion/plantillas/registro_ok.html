@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cuenta creada · MiBlog{% endblock %}
+
+{% block contenido %}
+<div class="panel__cuerpo">
+  <p class="sobretitulo">02 // Alta de cuenta</p>
+  <h1 class="titulo">Cuenta creada</h1>
+  <p class="texto centrado">Listo, {{ usuario.nombre_usuario }}: tu cuenta ya está activa. Ahora podés iniciar sesión.</p>
+  <a class="boton boton--primario" href="/">Iniciar sesión</a>
+</div>
+{% endblock %}

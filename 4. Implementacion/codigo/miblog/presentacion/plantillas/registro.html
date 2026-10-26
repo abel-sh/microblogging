@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block titulo %}Crear cuenta · MiBlog{% endblock %}
+
+{% block contenido %}
+<div class="panel__cuerpo">
+  <p class="sobretitulo">02 // Alta de cuenta</p>
+  <h1 class="titulo">Crear cuenta</h1>
+
+  {# enctype multipart: sin eso el navegador no manda el archivo de la foto. #}
+  <form class="formulario formulario--ancho" method="post" action="/registro"
+        enctype="multipart/form-data" novalidate>
+
+    <div class="campo">
+      <label class="campo__etiqueta" for="nombre_usuario">Nombre de usuario</label>
+      <input class="campo__entrada" id="nombre_usuario" name="nombre_usuario" type="text"
+             value="{{ valores.get('nombre_usuario', '') }}" autocomplete="username">
+      {% if errores.get('nombre_usuario') %}
+        <span class="campo__mensaje">{{ errores['nombre_usuario'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      <label class="campo__etiqueta" for="email">Correo electrónico</label>
+      <input class="campo__entrada" id="email" name="email" type="email"
+             value="{{ valores.get('email', '') }}" autocomplete="email">
+      {% if errores.get('email') %}
+        <span class="campo__mensaje">{{ errores['email'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="campos-en-fila">
+      <div class="campo">
+        <label class="campo__etiqueta" for="clave">Clave</label>
+        <input class="campo__entrada" id="clave" name="clave" type="password"
+               autocomplete="new-password">
+        {% if errores.get('clave') %}
+          <span class="campo__mensaje">{{ errores['clave'] }}</span>
+        {% endif %}
+      </div>
+      <div class="campo">
+        <label class="campo__etiqueta" for="confirmacion_clave">Repetir clave</label>
+        <input class="campo__entrada" id="confirmacion_clave" name="confirmacion_clave"
+               type="password" autocomplete="new-password">
+        {% if errores.get('confirmacion_clave') %}
+          <span class="campo__mensaje">{{ errores['confirmacion_clave'] }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="campo">
+      <label class="campo__etiqueta" for="nombre_completo">Nombre completo</label>
+      <input class="campo__entrada" id="nombre_completo" name="nombre_completo" type="text"
+             value="{{ valores.get('nombre_completo', '') }}" autocomplete="name">
+      {% if errores.get('nombre_completo') %}
+        <span class="campo__mensaje">{{ errores['nombre_completo'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="campo">
+      <label class="campo__etiqueta" for="descripcion">Descripción breve (opcional)</label>
+      <textarea class="campo__entrada" id="descripcion" name="descripcion"
+                rows="3">{{ valores.get('descripcion', '') }}</textarea>
+    </div>
+
+    <div class="campo">
+      <div class="selector-foto">
+        <span class="selector-foto__circulo" aria-hidden="true"></span>
+        <div class="campo">
+          <label class="campo__etiqueta" for="foto">Foto de perfil (opcional)</label>
+          <input class="campo__archivo" id="foto" name="foto" type="file"
+                 accept=".png,.jpg,.jpeg">
+        </div>
+      </div>
+      {% if errores.get('foto') %}
+        <span class="campo__mensaje">{{ errores['foto'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="acciones acciones--bloque">
+      <button class="boton boton--primario" type="submit">Registrarse</button>
+      {# ca 1.4: Cancelar es un enlace. No manda nada al servidor, así que no hay nada que descartar. #}
+      <a class="boton boton--secundario" href="/">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

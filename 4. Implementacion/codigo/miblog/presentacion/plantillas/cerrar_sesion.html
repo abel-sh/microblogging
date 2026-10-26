@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block titulo %}Cerrar sesión · MiBlog{% endblock %}
+
+{% block clase_cuerpo %}cuerpo-dialogo{% endblock %}
+
+{# Un diálogo reemplaza el panel entero: sin barra superior (D-11, H9). #}
+{% block panel %}
+<section class="dialogo" aria-labelledby="titulo-dialogo">
+  <h1 class="titulo titulo--dialogo" id="titulo-dialogo">¿Cerrar sesión?</h1>
+  <p class="texto">Vas a salir de MiBlog. Para volver a entrar vas a tener que iniciar sesión de nuevo.</p>
+  <form class="acciones" method="post" action="/sesion/cerrar">
+    <button class="boton boton--primario" type="submit">Cerrar sesión</button>
+    <a class="boton boton--secundario" href="/tablon">Cancelar</a>
+  </form>
+</section>
+{% endblock %}
