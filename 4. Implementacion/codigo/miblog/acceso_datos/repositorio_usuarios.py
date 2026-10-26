@@ -9,7 +9,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
-from miblog.acceso_datos.conexion import obtener_conexion
+from miblog.acceso_datos.conexion import normalizar, obtener_conexion
 from miblog.logica.dominio.enumeraciones import RolUsuario
 from miblog.logica.dominio.usuario import Usuario
 
@@ -76,3 +76,40 @@ class RepositorioUsuarios:
             (nombre_usuario,),
         ).fetchone()
         return construir_usuario(fila) if fila is not None else None
+
+    # --- Bloque 4.3: seguir (CU0011) y buscar (CU0014) ------------------
+
+    def buscar_activo_por_id(self, id_usuario: int) -> Usuario | None:
+        """El usuario con ese id si existe y está activo; si no, None (ca 11.1)."""
+        fila = obtener_conexion().execute(
+            "SELECT * FROM usuarios WHERE id_usuario = ? AND activo = 1",
+            (id_usuario,),
+        ).fetchone()
+        return construir_usuario(fila) if fila is not None else None
+
+    def buscar_activos_por_criterio(self, criterio: str) -> list[Usuario]:
+        """Cuentas activas cuyo nombre de usuario o nombre completo contienen el criterio.
+
+        No distingue mayúsculas ni acentos (rnf 14.1): la función normalizar() de
+        conexion.py está registrada en SQLite, así que la consulta la aplica a la
+        columna y acá se aplica al criterio. Las dos puntas quedan "iguales".
+        """
+        patron = "%" + _escapar_like(normalizar(criterio)) + "%"
+        filas = obtener_conexion().execute(
+            "SELECT * FROM usuarios"
+            " WHERE activo = 1"
+            " AND (normalizar(nombre_usuario) LIKE ? ESCAPE '\\'"
+            "      OR normalizar(nombre_completo) LIKE ? ESCAPE '\\')"
+            " ORDER BY normalizar(nombre_completo), id_usuario",
+            (patron, patron),
+        ).fetchall()
+        return [construir_usuario(fila) for fila in filas]
+
+
+def _escapar_like(texto: str) -> str:
+    """Convierte %, _ y \\ en texto común dentro de un LIKE.
+
+    Sin esto, buscar "100%" o "a_b" trataría el % y el _ como comodines. La barra
+    se escapa primero: si no, se duplicaría la que acabamos de agregar.
+    """
+    return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
