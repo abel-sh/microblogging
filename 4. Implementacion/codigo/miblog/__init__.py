@@ -4,7 +4,8 @@ crear_app() es el único módulo que conoce las cuatro capas: crea los
 repositorios, se los da a los controles, les da los controles a las vistas y
 registra las rutas. En el bloque 4.2 están las rutas de la sesión: registro,
 inicio y cierre de sesión (CU0001, CU0002, CU0003). En el bloque 4.3 se suman
-las primeras rutas protegidas: buscar usuarios y seguirlos (CU0014, CU0011).
+las primeras rutas protegidas: buscar usuarios y seguirlos (CU0014, CU0011). En
+el bloque 4.4 llegan el tablón y la publicación de mensajes (CU0009, CU0004).
 """
 
 from __future__ import annotations
@@ -22,14 +23,27 @@ from miblog.acceso_datos.conexion import (
     cerrar_conexion,
     inicializar_base,
 )
+from miblog.acceso_datos.repositorio_elementos import RepositorioElementos
+from miblog.acceso_datos.repositorio_mensajes import RepositorioMensajes
+from miblog.acceso_datos.repositorio_republicaciones import RepositorioRepublicaciones
 from miblog.acceso_datos.repositorio_seguimientos import RepositorioSeguimientos
 from miblog.acceso_datos.repositorio_sesiones import RepositorioSesiones
 from miblog.acceso_datos.repositorio_usuarios import RepositorioUsuarios
+from miblog.logica.gestion_mensajes.analizador import AnalizadorDeTexto
+from miblog.logica.gestion_mensajes.control_publicacion import ControlPublicacion
+from miblog.logica.gestion_mensajes.control_tablon import ControlTablon
+from miblog.logica.gestion_mensajes.extractores import (
+    ExtractorEnlaces,
+    ExtractorEtiquetas,
+    ExtractorMenciones,
+)
+from miblog.logica.gestion_mensajes.operaciones_mensaje import Publicacion
 from miblog.logica.gestion_relaciones.control_busqueda_usuarios import ControlBusquedaUsuarios
 from miblog.logica.gestion_relaciones.control_seguimiento import ControlSeguimiento
 from miblog.logica.gestion_usuarios.control_autenticacion import ControlAutenticacion
 from miblog.logica.gestion_usuarios.control_registro import ControlRegistro
 from miblog.presentacion.seguridad_web import GuardiaSesion
+from miblog.presentacion.vistas_mensajes import VistaTablon, formatear_fecha
 from miblog.presentacion.vistas_relaciones import VistaBusquedaUsuarios
 from miblog.presentacion.vistas_usuarios import (
     VistaConfirmacionCierreSesion,
@@ -93,6 +107,9 @@ def crear_app() -> Flask:
     repo_usuarios = RepositorioUsuarios()
     repo_sesiones = RepositorioSesiones()
     repo_seguimientos = RepositorioSeguimientos()
+    repo_mensajes = RepositorioMensajes()
+    repo_republicaciones = RepositorioRepublicaciones()
+    repo_elementos = RepositorioElementos()
     almacen_fotos = AlmacenFotos(os.path.join(app.static_folder, "fotos"))
 
     # --- Capa 2: controles ---
@@ -105,16 +122,31 @@ def crear_app() -> Flask:
     control_busqueda = ControlBusquedaUsuarios(repo_usuarios, repo_seguimientos)
     control_seguimiento = ControlSeguimiento(repo_usuarios, repo_seguimientos)
 
+    # Strategy: este es el único lugar que nombra los extractores concretos. El
+    # analizador los recibe ya armados y no sabe cuáles son. Para sumar un cuarto
+    # tipo de elemento se agrega una clase y se la suma a esta lista.
+    analizador = AnalizadorDeTexto(
+        [ExtractorEtiquetas(), ExtractorMenciones(), ExtractorEnlaces()]
+    )
+    # Template Method: la operación de publicar, con todo lo que necesita ya adentro.
+    publicacion = Publicacion(analizador, repo_mensajes, repo_elementos)
+    control_publicacion = ControlPublicacion(publicacion)
+    control_tablon = ControlTablon(repo_mensajes, repo_republicaciones)
+
     # --- Capa 1: guardia y vistas ---
-    # Desde el bloque 4.3 la guardia envuelve las rutas de buscar y seguir. Las
-    # demás rutas protegidas (empezando por GET /tablon) llegan en el bloque 4.4.
+    # La guardia envuelve las rutas protegidas: buscar y seguir (bloque 4.3), y el
+    # tablón y publicar (bloque 4.4).
     guardia = GuardiaSesion(control_autenticacion)
     vista_inicio_sesion = VistaInicioSesion(control_autenticacion)
     vista_registro = VistaRegistro(control_registro)
     vista_cierre = VistaConfirmacionCierreSesion(control_autenticacion)
     vista_busqueda = VistaBusquedaUsuarios(control_busqueda, control_seguimiento)
+    vista_tablon = VistaTablon(control_tablon, control_publicacion)
 
-    # --- Rutas públicas: ninguna de estas pasa por la guardia (DISEÑO §2.5). ---
+    # Filtro de las plantillas para mostrar fechas: {{ fecha_del_mensaje|fecha }}.
+    app.add_template_filter(formatear_fecha, "fecha")
+
+    # --- Rutas públicas: ninguna de estas pasa por la guardia. ---
     app.add_url_rule("/", "inicio_sesion", vista_inicio_sesion.mostrar)
     app.add_url_rule("/sesion/iniciar", "iniciar_sesion", vista_inicio_sesion.iniciar_sesion,
                      methods=["POST"])
@@ -130,6 +162,12 @@ def crear_app() -> Flask:
                      guardia.requiere_sesion(vista_busqueda.buscar))
     app.add_url_rule("/usuarios/<int:id_seguido>/seguir", "seguir_usuario",
                      guardia.requiere_sesion(vista_busqueda.seguir), methods=["POST"])
+    app.add_url_rule("/tablon", "tablon", guardia.requiere_sesion(vista_tablon.mostrar))
+    # conservar_borrador=True: si la sesión expiró mientras el usuario escribía, la
+    # guardia guarda el texto para devolvérselo al volver a iniciar sesión (ca 4.3).
+    app.add_url_rule("/mensajes", "publicar_mensaje",
+                     guardia.requiere_sesion(vista_tablon.publicar, conservar_borrador=True),
+                     methods=["POST"])
 
     return app
 
