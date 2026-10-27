@@ -425,6 +425,14 @@ textarea.campo__entrada {
   color: var(--color-suave);
 }
 
+/* Pasado el límite: contador.js le agrega esta clase cuando quedan menos de 0. La
+   paleta no tiene colores de alerta, así que el aviso no depende del color: pasa a
+   negrita y a la tinta fuerte, y además el número se vuelve negativo. */
+.contador--excedido {
+  color: var(--color-tinta);
+  font-weight: 700;
+}
+
 /* Fila de botones al pie de un formulario o de un diálogo */
 .acciones {
   display: flex;
@@ -606,6 +614,7 @@ textarea.campo__entrada {
   line-height: var(--interlineado);
   color: var(--color-texto);
   overflow-wrap: anywhere;   /* una URL larga no tiene que romper la tarjeta */
+  white-space: pre-line;     /* respeta los Enter que escribió el autor */
 }
 
 .tarjeta__acciones {

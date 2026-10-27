@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block titulo %}Tablón · MiBlog{% endblock %}
+
+{# Avatar + nombre + texto de un mensaje. Lo usan los mensajes comunes y, adentro de
+   la tarjeta de republicación, el mensaje original. Los dos son ElementoDeTablon, así
+   que responden a las mismas preguntas. con_fecha es False para el original de una
+   republicación: la fecha que se muestra ahí es la de la republicación. #}
+{% macro contenido(elemento, con_fecha) %}
+  {% set autor = elemento.obtener_autor_original() %}
+  {% if autor.url_foto %}
+    <img class="avatar avatar--mediano" src="{{ url_for('static', filename='fotos/' ~ autor.url_foto) }}" alt="">
+  {% else %}
+    <span class="avatar avatar--mediano" aria-hidden="true"></span>
+  {% endif %}
+
+  <div class="tarjeta__cuerpo">
+    <div class="tarjeta__cabecera">
+      <span class="tarjeta__nombre">{{ autor.nombre_completo }}</span>
+      <span class="tarjeta__usuario">@{{ autor.nombre_usuario }}</span>
+      {% if con_fecha %}
+        <span class="tarjeta__fecha">{{ elemento.obtener_fecha_de_orden()|fecha }}</span>
+      {% endif %}
+      {% if elemento.esta_editado() %}
+        <span class="tarjeta__editado">(editado)</span>
+      {% endif %}
+    </div>
+    {# Jinja2 escapa el texto solo: nunca se usa |safe, y un enlace se ve como texto. #}
+    <p class="tarjeta__texto">{{ elemento.obtener_texto_vigente() }}</p>
+  </div>
+{% endmacro %}
+
+{% block contenido %}
+<section class="seccion" aria-labelledby="titulo-tablon">
+  <p class="sobretitulo">03 // Tablón</p>
+  <h1 class="titulo" id="titulo-tablon">Tablón</h1>
+
+  {# CU0004. El límite no se escribe acá: viene de OperacionSobreMensaje.LIMITE.
+     No lleva "maxlength": si el navegador cortara el texto, el servidor nunca vería
+     un mensaje excedido, y el curso alternativo ca 4.2 pide informar cuánto sobra. #}
+  <form method="post" action="/mensajes">
+    <div class="campo">
+      <label class="campo__etiqueta" for="texto">Nuevo mensaje</label>
+      <div class="redactor">
+        <textarea class="redactor__texto" id="texto" name="texto" rows="3"
+                  placeholder="Escribí tu mensaje. Podés usar #etiquetas y @menciones."
+                  data-limite="{{ limite }}" data-contador="contador"
+                  autofocus>{{ texto }}</textarea>
+        <div class="redactor__pie">
+          <span class="contador" id="contador" aria-live="polite">{{ limite - texto|length }}</span>
+          <button class="boton boton--primario boton--mediano" type="submit">Publicar</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="seccion" aria-label="Mensajes">
+  {# CU0009. elementos llega ordenado del más reciente al más antiguo. #}
+  {% if not elementos %}
+    {# ca 9.1: tablón vacío. #}
+    <div class="vacio">
+      <p>Tu tablón está vacío.</p>
+      <p>Publicá tu primer mensaje o <a href="/usuarios/buscar">buscá usuarios a quienes seguir</a>.</p>
+    </div>
+  {% else %}
+    <ul class="lista">
+      {% for elemento in elementos %}
+        {# La plantilla no pregunta de qué tipo es el elemento: pregunta si tiene
+           republicador. Un mensaje común responde None. #}
+        {% set republicador = elemento.obtener_republicador() %}
+        {% if republicador %}
+        <li class="tarjeta tarjeta--republicacion">
+          <p class="tarjeta__republico">{{ republicador.nombre_completo }} republicó · {{ elemento.obtener_fecha_de_orden()|fecha }}</p>
+          <div class="tarjeta__original">
+            {{ contenido(elemento, false) }}
+          </div>
+        </li>
+        {% else %}
+        <li class="tarjeta">
+          {{ contenido(elemento, true) }}
+        </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='contador.js') }}"></script>
+{% endblock %}
