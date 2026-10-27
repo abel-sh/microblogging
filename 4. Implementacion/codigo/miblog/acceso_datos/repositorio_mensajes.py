@@ -99,6 +99,60 @@ class RepositorioMensajes:
         ).fetchall()
         return [construir_mensaje(fila) for fila in filas]
 
+    # --- Bloque 4.5: editar (CU0005), borrar (CU0006) y republicar (CU0007) ---
+
+    def buscar_por_id(self, id_mensaje: int) -> MensajePublico | None:
+        """El mensaje con ese id, con su autor, o None si no existe (o ya lo borraron).
+
+        Lo usan los tres casos de uso del bloque: editar y borrar para verificar la
+        autoría (rnf 5.1, rnf 6.1) y republicar para saber de quién es el original.
+        No filtra por usuario: quién puede hacer qué con el mensaje lo decide la
+        lógica, no esta consulta.
+        """
+        fila = obtener_conexion().execute(
+            "SELECT m.id_mensaje, m.texto, m.fecha_publicacion, m.fecha_ultima_edicion,"
+            " m.editado, m.origen,"
+            " a.id_usuario AS autor_id_usuario, a.nombre_usuario AS autor_nombre_usuario,"
+            " a.nombre_completo AS autor_nombre_completo, a.url_foto AS autor_url_foto"
+            " FROM mensajes AS m"
+            " JOIN usuarios AS a ON a.id_usuario = m.id_autor"
+            " WHERE m.id_mensaje = ?",
+            (id_mensaje,),
+        ).fetchone()
+        return construir_mensaje(fila) if fila is not None else None
+
+    def actualizar_texto(self, mensaje: MensajePublico) -> int:
+        """Guarda el texto nuevo, la marca de editado y la fecha de la última edición.
+
+        Escribe las tres columnas juntas, como exige el CHECK de la tabla (diagrama
+        de estados 7.1): un mensaje editado siempre tiene fecha de edición.
+        Devuelve cuántas filas cambió (1 si el mensaje existe, 0 si no).
+        """
+        cursor = obtener_conexion().execute(
+            "UPDATE mensajes SET texto = ?, editado = ?, fecha_ultima_edicion = ?"
+            " WHERE id_mensaje = ?",
+            (
+                mensaje.texto,
+                1 if mensaje.editado else 0,
+                _fecha_a_texto(mensaje.fecha_ultima_edicion),
+                mensaje.id_mensaje,
+            ),
+        )
+        return cursor.rowcount
+
+    def eliminar(self, id_mensaje: int) -> int:
+        """Borra la fila del mensaje. Devuelve cuántas filas borró.
+
+        Es el ÚLTIMO paso del borrado: antes, ControlPublicacion borró
+        las republicaciones y los elementos. Si no lo hubiera hecho, las claves
+        foráneas harían fallar este DELETE y la transacción volvería atrás.
+        """
+        cursor = obtener_conexion().execute(
+            "DELETE FROM mensajes WHERE id_mensaje = ?",
+            (id_mensaje,),
+        )
+        return cursor.rowcount
+
 
 def _fecha_a_texto(fecha: datetime | None) -> str | None:
     """datetime -> texto ISO 8601, que es como se guardan las fechas. None sigue siendo None."""

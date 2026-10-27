@@ -61,3 +61,39 @@ class RepositorioRepublicaciones:
             fecha_republicacion=datetime.fromisoformat(fila["fecha_republicacion"]),
             original=construir_mensaje(fila),
         )
+
+    # --- Republicar (CU0007) y borrar (CU0006) ---
+
+    def existe(self, id_usuario: int, id_mensaje: int) -> bool:
+        """¿id_usuario ya republicó ese mensaje? Es la pregunta de ca 7.3."""
+        fila = obtener_conexion().execute(
+            "SELECT 1 FROM republicaciones WHERE id_usuario = ? AND id_mensaje = ?",
+            (id_usuario, id_mensaje),
+        ).fetchone()
+        return fila is not None
+
+    def crear(self, id_usuario: int, id_mensaje: int, fecha: datetime) -> int:
+        """Registra quién republicó, qué mensaje y cuándo. Devuelve el id de la republicación.
+
+        No se guarda ningún texto: la republicación apunta al original. La
+        tabla repite la regla de ca 7.3 como segunda barrera: UNIQUE (id_usuario,
+        id_mensaje).
+        """
+        cursor = obtener_conexion().execute(
+            "INSERT INTO republicaciones (id_usuario, id_mensaje, fecha_republicacion)"
+            " VALUES (?, ?, ?)",
+            (id_usuario, id_mensaje, fecha.isoformat()),
+        )
+        return cursor.lastrowid
+
+    def eliminar_por_mensaje(self, id_mensaje: int) -> int:
+        """Borra todas las republicaciones de un mensaje. Devuelve cuántas borró.
+
+        Es el PRIMER paso del borrado en cascada (CU0006, paso 5): una republicación
+        no puede quedar apuntando a un mensaje que ya no existe.
+        """
+        cursor = obtener_conexion().execute(
+            "DELETE FROM republicaciones WHERE id_mensaje = ?",
+            (id_mensaje,),
+        )
+        return cursor.rowcount
