@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block titulo %}Borrar mensaje · MiBlog{% endblock %}
+
+{% block clase_cuerpo %}cuerpo-dialogo{% endblock %}
+
+{# CU0006. Página propia (H9): reemplaza el panel entero, sin barra superior (D-08). #}
+{% block panel %}
+<section class="dialogo" aria-labelledby="titulo-dialogo">
+  <h1 class="titulo titulo--dialogo" id="titulo-dialogo">¿Borrar este mensaje?</h1>
+
+  {# Se muestra el mensaje para que se vea cuál se va a borrar. Jinja2 lo escapa solo. #}
+  <div class="tarjeta__original">
+    <p class="tarjeta__texto">{{ texto }}</p>
+  </div>
+
+  {# rnf 6.2: la advertencia pedida por la especificación. #}
+  <p class="texto">No se puede deshacer. El mensaje también va a desaparecer de los tablones donde fue republicado.</p>
+
+  <form class="acciones" method="post" action="/mensajes/{{ id_mensaje }}/borrar">
+    <button class="boton boton--primario" type="submit">Borrar</button>
+    {# ca 6.3: Cancelar es un enlace. No llega ninguna petición a la lógica. #}
+    <a class="boton boton--secundario" href="/tablon">Cancelar</a>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar mensaje · MiBlog{% endblock %}
+
+{% block clase_cuerpo %}cuerpo-dialogo{% endblock %}
+
+{# CU0005. Un diálogo es una página propia (H9): reemplaza el panel entero, así que no
+   lleva barra superior (D-08). Como el panel de base.html no se dibuja acá, los avisos
+   de flash() (ca 5.3) se dibujan en esta plantilla. #}
+{% block panel %}
+<section class="dialogo" aria-labelledby="titulo-dialogo">
+  <h1 class="titulo titulo--dialogo" id="titulo-dialogo">Editar mensaje</h1>
+
+  {% for categoria, aviso in get_flashed_messages(with_categories=true) %}
+    <p class="aviso aviso--{{ categoria }}" role="status">{{ aviso }}</p>
+  {% endfor %}
+
+  {# El límite viene de OperacionSobreMensaje.LIMITE, igual que en el tablón, y el
+     campo tampoco lleva "maxlength": el servidor tiene que poder informar cuánto
+     sobra (ca 5.3). #}
+  <form class="formulario" method="post" action="/mensajes/{{ id_mensaje }}/editar">
+    <div class="campo">
+      <label class="campo__etiqueta" for="texto">Texto del mensaje</label>
+      <div class="redactor">
+        <textarea class="redactor__texto" id="texto" name="texto" rows="3"
+                  data-limite="{{ limite }}" data-contador="contador"
+                  autofocus>{{ texto }}</textarea>
+        <div class="redactor__pie">
+          <span class="contador" id="contador" aria-live="polite">{{ limite - texto|length }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="acciones">
+      <button class="boton boton--primario" type="submit">Guardar</button>
+      {# ca 5.4: Cancelar es un enlace. No llega ninguna petición a la lógica. #}
+      <a class="boton boton--secundario" href="/tablon">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='contador.js') }}"></script>
+{% endblock %}
