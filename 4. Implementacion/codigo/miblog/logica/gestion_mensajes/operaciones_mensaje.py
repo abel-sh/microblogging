@@ -1,4 +1,4 @@
-"""OperacionSobreMensaje y Publicacion: el patrón Template Method.
+"""OperacionSobreMensaje, Publicacion y Edicion: el patrón Template Method.
 
 Publicar un mensaje y editarlo siguen los mismos pasos en el
 mismo orden:
@@ -26,7 +26,11 @@ from miblog.acceso_datos.conexion import transaccion
 from miblog.acceso_datos.repositorio_elementos import RepositorioElementos
 from miblog.acceso_datos.repositorio_mensajes import RepositorioMensajes
 from miblog.logica.dominio.elementos import ElementoExtraido
-from miblog.logica.dominio.errores import TextoExcedidoError, TextoVacioError
+from miblog.logica.dominio.errores import (
+    MensajeInexistenteError,
+    TextoExcedidoError,
+    TextoVacioError,
+)
 from miblog.logica.dominio.mensaje import MensajePublico
 from miblog.logica.dominio.usuario import Usuario
 from miblog.logica.gestion_mensajes.analizador import AnalizadorDeTexto
@@ -111,4 +115,38 @@ class Publicacion(OperacionSobreMensaje):
     def _persistir_mensaje(self, texto: str, usuario: Usuario, **datos) -> MensajePublico:
         mensaje = MensajePublico.publicar(usuario, texto, datetime.now(timezone.utc))
         mensaje.id_mensaje = self._repo_mensajes.crear(mensaje)
+        return mensaje
+
+
+class Edicion(OperacionSobreMensaje):
+    """CU0005: editar actualiza un mensaje que ya existe. Completa dos pasos.
+
+    Se ejecuta como `edicion.ejecutar(usuario, texto, id_mensaje=...)`: el id del
+    mensaje viaja en `**datos`, que es el lugar que el esqueleto reserva para lo
+    que solo una operación necesita. Validar el texto, analizarlo y reemplazar los
+    elementos son los pasos compartidos con Publicacion: acá no se reescriben.
+    """
+
+    def _autorizar(self, usuario: Usuario, **datos) -> None:
+        """Verifica la autoría DENTRO de la operación que modifica (rnf 5.1).
+
+        Ya se verificó al abrir el diálogo, pero cada petición HTTP es
+        independiente: entre abrir y confirmar el mensaje pudo borrarse (ca 5.1)
+        o alguien pudo mandar el POST a mano (ca 5.2).
+        """
+        mensaje = self._buscar_mensaje(datos["id_mensaje"])
+        mensaje.verificar_autoria(usuario.id_usuario)
+
+    def _persistir_mensaje(self, texto: str, usuario: Usuario, **datos) -> MensajePublico:
+        mensaje = self._buscar_mensaje(datos["id_mensaje"])
+        # editar() pone texto, marca de editado y fecha juntos (diagrama de estados 7.1).
+        mensaje.editar(texto, datetime.now(timezone.utc))
+        self._repo_mensajes.actualizar_texto(mensaje)
+        return mensaje
+
+    def _buscar_mensaje(self, id_mensaje: int) -> MensajePublico:
+        """El mensaje a editar, o MensajeInexistenteError si ya no existe (ca 5.1)."""
+        mensaje = self._repo_mensajes.buscar_por_id(id_mensaje)
+        if mensaje is None:
+            raise MensajeInexistenteError()
         return mensaje
