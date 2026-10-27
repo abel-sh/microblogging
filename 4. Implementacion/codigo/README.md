@@ -11,7 +11,7 @@ Sistema de microblogging para empleados de una empresa. Cada persona publica men
 | Buscar usuarios por nombre de usuario o nombre completo (sin distinguir mayúsculas ni acentos) y seguirlos | Disponible |
 | Publicar un mensaje de hasta 140 caracteres | Disponible |
 | Ver el tablón: los mensajes propios y los de las personas a las que se sigue, del más reciente al más antiguo | Disponible |
-| Editar y borrar un mensaje propio, y republicar el de alguien a quien se sigue | En desarrollo |
+| Editar y borrar un mensaje propio, y republicar el de alguien a quien se sigue | Disponible |
 
 ## Cómo funciona un mensaje
 
@@ -19,9 +19,12 @@ Sistema de microblogging para empleados de una empresa. Cada persona publica men
 - **Etiquetas.** `#` seguido de letras, números o guion bajo, como `#reunion`. Se guardan en minúsculas, así que `#Reunion` y `#reunion` son la misma. No cuenta si antes del `#` hay una letra o una barra (`C#`, o el `#seccion` de una dirección web).
 - **Menciones.** `@` seguido de un nombre de usuario, como `@juan.perez`. El nombre puede llevar punto o guion en el medio, pero no al final: en `hola @ana.` el punto es de la frase. La mención se guarda solo si existe un usuario activo con ese nombre; si no, se descarta sin avisar. `ana@empresa.com` no es una mención.
 - **Enlaces.** Direcciones que empiezan con `http://` o `https://`. La puntuación del final no cuenta: en `mirá https://sitio.com.` el punto no es parte del enlace.
-- **Qué se ve.** Las etiquetas, menciones y enlaces se detectan y se guardan al publicar, pero en pantalla el texto se muestra tal cual lo escribió la persona: todavía no son clicables.
+- **Qué se ve.** Las etiquetas, menciones y enlaces se detectan y se guardan al publicar o al editar, pero en pantalla el texto se muestra tal cual lo escribió la persona: todavía no son clicables.
 - **Tablón.** Muestra cada mensaje con su autor, su fecha (`dd/mm/aaaa hh:mm`, hora del servidor) y su texto. Si no hay nada para mostrar, avisa y ofrece buscar usuarios para seguir.
 - **Borrador.** Si la sesión vence mientras se escribe un mensaje, el texto se conserva y reaparece una vez al volver a iniciar sesión.
+- **Editar.** Solo quien escribió el mensaje. El botón "Editar" abre una página con el texto actual; "Guardar" aplica las mismas reglas de largo que al publicar. Si el texto queda vacío o se pasa, se avisa y el mensaje guardado no cambia. Al guardar se vuelven a calcular las etiquetas, menciones y enlaces, y el mensaje muestra "(editado el dd/mm/aaaa hh:mm)". "Cancelar" vuelve al tablón sin tocar nada.
+- **Borrar.** Solo quien escribió el mensaje. El botón "Borrar" abre una página que muestra el mensaje, avisa que no se puede deshacer y pide confirmar. Al confirmar se borran el mensaje, sus republicaciones y sus etiquetas, menciones y enlaces, todo junto o nada. Las etiquetas en sí quedan registradas aunque ningún mensaje las use.
+- **Republicar.** El botón "Republicar" aparece en todo mensaje cuyo autor original no es uno mismo, y el servidor decide si corresponde. Solo se puede republicar el mensaje de alguien a quien se sigue, no el propio y una sola vez. Si no corresponde, se avisa por qué. La republicación no copia el texto: apunta al mensaje original, así que si el autor lo edita, la republicación muestra el texto nuevo, y si lo borra, desaparece. Se muestra en el tablón de quienes siguen a quien republicó, con su fecha.
 
 ## Requisitos
 
@@ -91,6 +94,8 @@ Cada prueba arma su propia aplicación con una base temporal, así que nunca toc
 - los extractores y el analizador de texto;
 - los repositorios de mensajes, republicaciones y elementos;
 - la publicación de mensajes y el tablón, incluido que una publicación que falla a mitad de camino no deja nada guardado;
+- la edición y el borrado de mensajes (quién puede, qué pasa con las etiquetas, menciones, enlaces y republicaciones, y que si algo falla a mitad de camino no queda nada a medias);
+- la republicación, con cada uno de sus avisos y el orden en que se verifican;
 - la aplicación completa a través de HTTP, con el cliente de pruebas de Flask;
 - el rendimiento del tablón (5.000 mensajes y 500 republicaciones, en menos de 3 segundos);
 - las reglas de arquitectura que se describen más abajo (por ejemplo, que la presentación no llegue a la base de datos y que el SQL esté solo en `acceso_datos`).
@@ -103,7 +108,7 @@ miblog/
 ├── presentacion/            capa de presentación: lo que ve y toca la persona
 │   ├── vistas_usuarios.py     registro, inicio y cierre de sesión
 │   ├── vistas_relaciones.py   búsqueda y seguimiento de usuarios
-│   ├── vistas_mensajes.py     tablón y publicación de mensajes
+│   ├── vistas_mensajes.py     tablón, publicación, edición, borrado y republicación
 │   ├── seguridad_web.py       guardia de sesión: protege las rutas privadas
 │   ├── plantillas/            páginas HTML (Jinja2)
 │   └── estaticos/             estilos.css, contador.js, fuentes/ y fotos/ (fotos de perfil subidas)
@@ -111,7 +116,7 @@ miblog/
 │   ├── dominio/               clases del negocio (Usuario, Mensaje, Republicacion...) y errores
 │   ├── gestion_usuarios/      registro y autenticación
 │   ├── gestion_relaciones/    búsqueda de usuarios y seguimiento
-│   └── gestion_mensajes/      publicación, tablón y análisis del texto
+│   └── gestion_mensajes/      publicación, edición, borrado, republicación, tablón y análisis del texto
 └── acceso_datos/            capa de acceso a datos: el único lugar con SQL
     ├── conexion.py            conexión a SQLite y transacciones
     ├── esquema.sql            las tablas
@@ -136,8 +141,8 @@ El sistema tiene cuatro capas, y cada una solo le habla a la siguiente: presenta
 Patrones de diseño que se usan:
 
 - **Strategy y Factory Method:** `ExtractorEtiquetas`, `ExtractorMenciones` y `ExtractorEnlaces` comparten una interfaz, y `AnalizadorDeTexto` los recibe sin saber cuáles son. Sumar un tipo de elemento nuevo no obliga a tocar el analizador.
-- **Template Method:** publicar un mensaje sigue siempre los mismos pasos, todos dentro de una transacción (autorizar, validar el texto, analizarlo, guardar el mensaje y guardar sus elementos), fijados en `OperacionSobreMensaje.ejecutar`. El límite de 140 caracteres está escrito en un solo lugar.
-- **Decorator:** en el tablón, un mensaje y una republicación se muestran de la misma manera, sin que el código pregunte de qué tipo es cada uno.
+- **Template Method:** publicar y editar un mensaje siguen siempre los mismos pasos, todos dentro de una transacción (autorizar, validar el texto, analizarlo, guardar el mensaje y guardar sus elementos), fijados en `OperacionSobreMensaje.ejecutar`. `Publicacion` y `Edicion` solo completan lo que cambia: publicar crea el mensaje y editar lo actualiza, después de comprobar que quien edita es el autor. El límite de 140 caracteres está escrito en un solo lugar.
+- **Decorator:** en el tablón, un mensaje y una republicación se muestran de la misma manera, sin que el código pregunte de qué tipo es cada uno. Los botones de cada tarjeta tampoco lo preguntan: se deciden por el autor original, que todo elemento sabe responder. Como la republicación le pide el texto al mensaje original, editarlo no obliga a tocar las republicaciones.
 
 ## Base de datos
 
@@ -161,6 +166,8 @@ SQLite, en `instance/miblog.sqlite3`, con las claves foráneas activadas. Las fe
 - La sesión es una fila de la tabla `sesiones`. El token viaja en la cookie (`HttpOnly`, `SameSite=Lax`) y en la base queda solo su hash, así que una copia del archivo de la base no sirve para armar una cookie. Al cerrar sesión, el token deja de valer en el servidor.
 - Los errores de inicio de sesión son siempre el mismo mensaje ("Usuario o clave incorrectos."), para no revelar qué usuarios existen.
 - El texto de los mensajes se escapa automáticamente al mostrarse, y todas las consultas SQL usan parámetros.
+- Editar y borrar solo puede hacerlo el autor, y eso se verifica en el servidor dos veces: al abrir la página del diálogo y de nuevo al confirmar. Esconder un botón no es un control: un pedido hecho a mano por otra persona se rechaza. Republicar también se decide en el servidor, aunque el botón se vea.
+- Los cambios de datos (editar, borrar, republicar) solo se aceptan por POST; abrir un enlace nunca borra ni edita nada.
 - Límite conocido: no hay tokens contra CSRF; la protección es la cookie `SameSite=Lax`.
 
 ## Límites conocidos
@@ -169,6 +176,9 @@ SQLite, en `instance/miblog.sqlite3`, con las claves foráneas activadas. Las fe
 - Las etiquetas, menciones y enlaces no son clicables, y no hay búsqueda por etiqueta ni perfil de usuario.
 - Un mensaje con muchísimos saltos de línea ocupa una tarjeta muy alta.
 - Un borrador muy largo (más de unos 4 KB) no se conserva cuando vence la sesión.
-- Un doble clic en "Publicar" crea dos mensajes.
+- Un doble clic en "Publicar" crea dos mensajes. Un doble clic en "Republicar" no duplica nada, pero el segundo clic muestra el aviso de que ya se republicó.
+- Guardar una edición sin cambiar el texto igual marca el mensaje como editado.
+- No se puede deshacer una republicación ni borrar solo la propia republicación.
+- Republicar con éxito no muestra ningún aviso: se nota porque la republicación aparece arriba de todo en el tablón.
 - El registro no restringe el formato del nombre de usuario: uno con espacios o símbolos no se puede mencionar.
 - No hay recuperación de clave ni edición del perfil.
