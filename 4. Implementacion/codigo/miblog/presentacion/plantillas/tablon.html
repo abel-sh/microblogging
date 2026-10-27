@@ -21,12 +21,30 @@
       {% if con_fecha %}
         <span class="tarjeta__fecha">{{ elemento.obtener_fecha_de_orden()|fecha }}</span>
       {% endif %}
+      {# rnf 5.2: marca visible de «editado» y la fecha de la última modificación. #}
       {% if elemento.esta_editado() %}
-        <span class="tarjeta__editado">(editado)</span>
+        <span class="tarjeta__editado">(editado el {{ elemento.obtener_fecha_ultima_edicion()|fecha }})</span>
       {% endif %}
     </div>
     {# Jinja2 escapa el texto solo: nunca se usa |safe, y un enlace se ve como texto. #}
     <p class="tarjeta__texto">{{ elemento.obtener_texto_vigente() }}</p>
+
+    {# CU0005, CU0006 y CU0007. Los botones se deciden por el AUTOR ORIGINAL, que
+       todo elemento sabe responder: ni acá ni en ningún lado se pregunta de qué tipo
+       es el elemento. Editar y Borrar son de quien escribió el mensaje; Republicar
+       aparece en todo lo que no es mío y el servidor decide si corresponde (H5). Un
+       botón escondido no es un control: la autoría se verifica en el servidor
+       (rnf 5.1, rnf 6.1). #}
+    <div class="tarjeta__acciones">
+      {% if autor.id_usuario == g.usuario.id_usuario %}
+        <a class="boton boton--secundario boton--chico" href="/mensajes/{{ elemento.obtener_id_mensaje() }}/editar">Editar</a>
+        <a class="boton boton--secundario boton--chico" href="/mensajes/{{ elemento.obtener_id_mensaje() }}/borrar">Borrar</a>
+      {% else %}
+        <form method="post" action="/mensajes/{{ elemento.obtener_id_mensaje() }}/republicar">
+          <button class="boton boton--secundario boton--chico" type="submit">Republicar</button>
+        </form>
+      {% endif %}
+    </div>
   </div>
 {% endmacro %}
 

@@ -2,11 +2,11 @@
 
 crear_app() es el único módulo que conoce las cuatro capas: crea los
 repositorios, se los da a los controles, les da los controles a las vistas y
-registra las rutas. En el bloque 4.2 están las rutas de la sesión: registro,
-inicio y cierre de sesión (CU0001, CU0002, CU0003). En el bloque 4.3 se suman
-las primeras rutas protegidas: buscar usuarios y seguirlos (CU0014, CU0011). En
-el bloque 4.4 llegan el tablón y la publicación de mensajes (CU0009, CU0004).
+registra las rutas. Son las 15 de la tabla de DISEÑO §2.5: las de la sesión
+(registro, inicio y cierre de sesión), buscar usuarios y seguirlos, el tablón y la
+publicación de mensajes, y editar, borrar y republicar.
 """
+
 
 from __future__ import annotations
 
@@ -31,19 +31,25 @@ from miblog.acceso_datos.repositorio_sesiones import RepositorioSesiones
 from miblog.acceso_datos.repositorio_usuarios import RepositorioUsuarios
 from miblog.logica.gestion_mensajes.analizador import AnalizadorDeTexto
 from miblog.logica.gestion_mensajes.control_publicacion import ControlPublicacion
+from miblog.logica.gestion_mensajes.control_republicacion import ControlRepublicacion
 from miblog.logica.gestion_mensajes.control_tablon import ControlTablon
 from miblog.logica.gestion_mensajes.extractores import (
     ExtractorEnlaces,
     ExtractorEtiquetas,
     ExtractorMenciones,
 )
-from miblog.logica.gestion_mensajes.operaciones_mensaje import Publicacion
+from miblog.logica.gestion_mensajes.operaciones_mensaje import Edicion, Publicacion
 from miblog.logica.gestion_relaciones.control_busqueda_usuarios import ControlBusquedaUsuarios
 from miblog.logica.gestion_relaciones.control_seguimiento import ControlSeguimiento
 from miblog.logica.gestion_usuarios.control_autenticacion import ControlAutenticacion
 from miblog.logica.gestion_usuarios.control_registro import ControlRegistro
 from miblog.presentacion.seguridad_web import GuardiaSesion
-from miblog.presentacion.vistas_mensajes import VistaTablon, formatear_fecha
+from miblog.presentacion.vistas_mensajes import (
+    DialogoConfirmacionBorrado,
+    DialogoEdicionMensaje,
+    VistaTablon,
+    formatear_fecha,
+)
 from miblog.presentacion.vistas_relaciones import VistaBusquedaUsuarios
 from miblog.presentacion.vistas_usuarios import (
     VistaConfirmacionCierreSesion,
@@ -128,20 +134,29 @@ def crear_app() -> Flask:
     analizador = AnalizadorDeTexto(
         [ExtractorEtiquetas(), ExtractorMenciones(), ExtractorEnlaces()]
     )
-    # Template Method: la operación de publicar, con todo lo que necesita ya adentro.
+    # Template Method: las dos operaciones, publicar y editar, con todo lo que necesitan
+    # ya adentro. Las dos reciben el mismo analizador y los mismos repositorios.
     publicacion = Publicacion(analizador, repo_mensajes, repo_elementos)
-    control_publicacion = ControlPublicacion(publicacion)
+    edicion = Edicion(analizador, repo_mensajes, repo_elementos)
+    control_publicacion = ControlPublicacion(
+        publicacion, edicion, repo_mensajes, repo_republicaciones, repo_elementos
+    )
+    control_republicacion = ControlRepublicacion(
+        repo_mensajes, repo_seguimientos, repo_republicaciones
+    )
     control_tablon = ControlTablon(repo_mensajes, repo_republicaciones)
 
     # --- Capa 1: guardia y vistas ---
-    # La guardia envuelve las rutas protegidas: buscar y seguir (bloque 4.3), y el
-    # tablón y publicar (bloque 4.4).
+    # La guardia envuelve las rutas protegidas: buscar y seguir, el
+    # tablón y publicar, y editar, borrar y republicar.
     guardia = GuardiaSesion(control_autenticacion)
     vista_inicio_sesion = VistaInicioSesion(control_autenticacion)
     vista_registro = VistaRegistro(control_registro)
     vista_cierre = VistaConfirmacionCierreSesion(control_autenticacion)
     vista_busqueda = VistaBusquedaUsuarios(control_busqueda, control_seguimiento)
-    vista_tablon = VistaTablon(control_tablon, control_publicacion)
+    vista_tablon = VistaTablon(control_tablon, control_publicacion, control_republicacion)
+    dialogo_edicion = DialogoEdicionMensaje(control_publicacion)
+    dialogo_borrado = DialogoConfirmacionBorrado(control_publicacion)
 
     # Filtro de las plantillas para mostrar fechas: {{ fecha_del_mensaje|fecha }}.
     app.add_template_filter(formatear_fecha, "fecha")
@@ -168,6 +183,19 @@ def crear_app() -> Flask:
     app.add_url_rule("/mensajes", "publicar_mensaje",
                      guardia.requiere_sesion(vista_tablon.publicar, conservar_borrador=True),
                      methods=["POST"])
+    # Todo lo que cambia datos es POST; los dos GET solo muestran el diálogo.
+    # Ninguna de estas rutas usa conservar_borrador: el texto de una edición nunca
+    # tiene que aparecer en el campo de publicar.
+    app.add_url_rule("/mensajes/<int:id_mensaje>/republicar", "republicar_mensaje",
+                     guardia.requiere_sesion(vista_tablon.republicar), methods=["POST"])
+    app.add_url_rule("/mensajes/<int:id_mensaje>/editar", "abrir_edicion",
+                     guardia.requiere_sesion(dialogo_edicion.abrir))
+    app.add_url_rule("/mensajes/<int:id_mensaje>/editar", "confirmar_edicion",
+                     guardia.requiere_sesion(dialogo_edicion.confirmar), methods=["POST"])
+    app.add_url_rule("/mensajes/<int:id_mensaje>/borrar", "solicitar_borrado",
+                     guardia.requiere_sesion(dialogo_borrado.solicitar_confirmacion))
+    app.add_url_rule("/mensajes/<int:id_mensaje>/borrar", "confirmar_borrado",
+                     guardia.requiere_sesion(dialogo_borrado.confirmar), methods=["POST"])
 
     return app
 

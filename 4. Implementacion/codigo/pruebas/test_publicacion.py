@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from miblog.acceso_datos.repositorio_elementos import RepositorioElementos
 from miblog.acceso_datos.repositorio_mensajes import RepositorioMensajes
+from miblog.acceso_datos.repositorio_republicaciones import RepositorioRepublicaciones
 from miblog.acceso_datos.repositorio_usuarios import RepositorioUsuarios
 from miblog.logica.dominio.enumeraciones import OrigenPublicacion
 from miblog.logica.dominio.errores import ErrorDeNegocio, TextoExcedidoError, TextoVacioError
@@ -22,7 +23,11 @@ from miblog.logica.gestion_mensajes.extractores import (
     ExtractorEtiquetas,
     ExtractorMenciones,
 )
-from miblog.logica.gestion_mensajes.operaciones_mensaje import OperacionSobreMensaje, Publicacion
+from miblog.logica.gestion_mensajes.operaciones_mensaje import (
+    Edicion,
+    OperacionSobreMensaje,
+    Publicacion,
+)
 
 from pruebas.ayudas import PruebaConBase, contar, crear_usuario
 
@@ -53,7 +58,9 @@ class PruebaPublicacion(PruebaConBase):
             OperacionSobreMensaje(None, None, None)
 
     def test_ninguna_subclase_redefine_ejecutar(self):
+        # Template Method: el orden de los pasos se escribe una sola vez, en la clase base.
         self.assertIs(Publicacion.ejecutar, OperacionSobreMensaje.ejecutar)
+        self.assertIs(Edicion.ejecutar, OperacionSobreMensaje.ejecutar)
 
     # --- Curso normal --------------------------------------------------------------
 
@@ -136,12 +143,16 @@ class PruebaControlPublicacion(PruebaConBase):
         super().setUp()
         crear_usuario(self.con, "ana")
         self.ana = RepositorioUsuarios().buscar_activo_por_nombre_usuario("ana")
+        analizador = AnalizadorDeTexto(
+            [ExtractorEtiquetas(), ExtractorMenciones(), ExtractorEnlaces()]
+        )
+        repo_mensajes, repo_elementos = RepositorioMensajes(), RepositorioElementos()
         self.control = ControlPublicacion(
-            Publicacion(
-                AnalizadorDeTexto([ExtractorEtiquetas(), ExtractorMenciones(), ExtractorEnlaces()]),
-                RepositorioMensajes(),
-                RepositorioElementos(),
-            )
+            Publicacion(analizador, repo_mensajes, repo_elementos),
+            Edicion(analizador, repo_mensajes, repo_elementos),
+            repo_mensajes,
+            RepositorioRepublicaciones(),
+            repo_elementos,
         )
 
     def test_publicar_delega_en_la_operacion(self):
