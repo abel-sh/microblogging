@@ -17,6 +17,8 @@
       <input class="campo__entrada" id="nombre_usuario" name="nombre_usuario" type="text"
              value="{{ valores.get('nombre_usuario', '') }}" placeholder="Hasta 15 caracteres"
              autocomplete="username">
+      {# Lo que se puede escribir copia la regla de ControlRegistro (ca 1.1) y es lo que una mención reconoce. #}
+      <p class="texto texto--chico">Letras, números y guion bajo. Puntos y guiones, solo en el medio.</p>
       {% if errores.get('nombre_usuario') %}
         <span class="campo__mensaje">{{ errores['nombre_usuario'] }}</span>
       {% endif %}

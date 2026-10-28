@@ -45,6 +45,11 @@ class ControlRegistro:
         "jpeg": (b"\xff\xd8\xff",),
     }
     _PATRON_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    # Forma del nombre de usuario (ca 1.1): letras, números y "_", y además "." o "-"
+    # pero solo EN EL MEDIO ("juan.perez", "ana-lopez"). Es la misma forma que reconoce
+    # ExtractorMenciones: todo nombre que se puede registrar se puede mencionar
+    # con @. Si una cambia, la otra también (hay una prueba que las ata).
+    _PATRON_NOMBRE_USUARIO = re.compile(r"\w+(?:[.\-]\w+)*")
 
     def __init__(
         self,
@@ -102,6 +107,11 @@ class ControlRegistro:
         elif len(nombre_usuario) > self.LIMITE_NOMBRE_USUARIO:
             errores["nombre_usuario"] = (
                 f"El nombre de usuario puede tener hasta {self.LIMITE_NOMBRE_USUARIO} caracteres."
+            )
+        elif not self._PATRON_NOMBRE_USUARIO.fullmatch(nombre_usuario):
+            errores["nombre_usuario"] = (
+                "Usá solo letras, números y guion bajo. Los puntos y guiones se admiten "
+                "únicamente en el medio."
             )
 
         email = datos.email.strip()
