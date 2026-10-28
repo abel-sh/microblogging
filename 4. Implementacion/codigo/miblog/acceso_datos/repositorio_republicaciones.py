@@ -23,7 +23,7 @@ from miblog.logica.dominio.republicacion import Republicacion
 
 
 class RepositorioRepublicaciones:
-    # --- Bloque 4.4: visualizar el tablón (CU0009) ---
+    # --- Visualizar el tablón (CU0009) ---
 
     def buscar_para_tablon(self, id_usuario: int) -> list[Republicacion]:
         """Las republicaciones hechas por id_usuario o por cualquiera de los que sigue.

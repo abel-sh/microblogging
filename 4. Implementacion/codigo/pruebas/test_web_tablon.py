@@ -90,7 +90,7 @@ class PruebaWebTablon(PruebaConApp):
         ana, beto = self.entrar("ana"), self.entrar("beto")
         ana.post("/mensajes", data={"texto": "original de ana"})
         beto.post("/mensajes", data={"texto": "mensaje de beto"})
-        with self.app.app_context():  # republicar es del bloque 4.5: se carga a mano
+        with self.app.app_context():  # las republicaciones se cargan a mano: acá se prueba el tablón
             con = obtener_conexion()
             id_original = con.execute("SELECT id_mensaje FROM mensajes WHERE id_autor = ?",
                                       (self.ana,)).fetchone()[0]

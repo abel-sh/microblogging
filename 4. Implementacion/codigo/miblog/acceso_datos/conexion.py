@@ -1,6 +1,6 @@
 """Conexión a SQLite, transacciones y normalización de texto.
 
-Es el único módulo que abre la base. Los repositorios (otros bloques) piden la
+Es el único módulo que abre la base. Los repositorios piden la
 conexión con obtener_conexion() y ejecutan SQL parametrizado con "?".
 """
 

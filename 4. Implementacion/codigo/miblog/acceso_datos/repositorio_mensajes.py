@@ -58,7 +58,7 @@ def construir_mensaje(fila: sqlite3.Row) -> MensajePublico:
 
 
 class RepositorioMensajes:
-    # --- Bloque 4.4: publicar (CU0004) y visualizar el tablón (CU0009) ---
+    # --- Publicar (CU0004) y visualizar el tablón (CU0009) ---
 
     def crear(self, mensaje: MensajePublico) -> int:
         """Inserta el mensaje y devuelve el id que le dio la base."""
@@ -99,12 +99,12 @@ class RepositorioMensajes:
         ).fetchall()
         return [construir_mensaje(fila) for fila in filas]
 
-    # --- Bloque 4.5: editar (CU0005), borrar (CU0006) y republicar (CU0007) ---
+    # --- Editar (CU0005), borrar (CU0006) y republicar (CU0007) ---
 
     def buscar_por_id(self, id_mensaje: int) -> MensajePublico | None:
         """El mensaje con ese id, con su autor, o None si no existe (o ya lo borraron).
 
-        Lo usan los tres casos de uso del bloque: editar y borrar para verificar la
+        Lo usan tres casos de uso: editar y borrar para verificar la
         autoría (rnf 5.1, rnf 6.1) y republicar para saber de quién es el original.
         No filtra por usuario: quién puede hacer qué con el mensaje lo decide la
         lógica, no esta consulta.

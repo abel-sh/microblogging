@@ -77,7 +77,7 @@ class RepositorioUsuarios:
         ).fetchone()
         return construir_usuario(fila) if fila is not None else None
 
-    # --- Bloque 4.3: seguir (CU0011) y buscar (CU0014) ------------------
+    # --- Seguir (CU0011) y buscar (CU0014) ------------------------------
 
     def buscar_activo_por_id(self, id_usuario: int) -> Usuario | None:
         """El usuario con ese id si existe y está activo; si no, None (ca 11.1)."""

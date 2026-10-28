@@ -1,4 +1,4 @@
-"""Pruebas de los tres repositorios del bloque 4.4 contra una base de verdad.
+"""Pruebas de los repositorios de mensajes, republicaciones y elementos contra una base de verdad.
 
 Cada prueba arranca con una base vacía (ver ayudas.py). Se prueba la capa de acceso
 a datos sola: sin controles ni HTTP.

@@ -1,6 +1,6 @@
 """Las seis comprobaciones mecánicas, como pruebas.
 
-Son los mismos `grep` que se corrían a mano al cerrar cada bloque. Acá buscan lo
+Son los mismos `grep` que se corrían a mano al cerrar cada etapa. Acá buscan lo
 mismo en los mismos lugares, así que una sola orden las corre todas y avisa en
 cuanto un cambio rompe una regla del diseño.
 

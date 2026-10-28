@@ -1,12 +1,12 @@
 """Elementos extraídos del texto de un mensaje. 
 
 Factory Method, lado Producto: ElementoExtraido es el producto abstracto y
-Etiqueta, Mencion y Enlace son los productos concretos. Los Extractores (que
-se escriben en otro bloque) son quienes los crean.
+Etiqueta, Mencion y Enlace son los productos concretos. Los Extractores (ver
+extractores.py) son quienes los crean.
 
 RegistroDeElementos es la interfaz que permite que cada elemento "sepa
-guardarse" sin que el dominio dependa de la base de datos (DISEÑO §5.5,
-inversión de dependencias). RepositorioElementos la va a realizar.
+guardarse" sin que el dominio dependa de la base de datos (inversión de dependencias). 
+RepositorioElementos la realiza.
 """
 
 from __future__ import annotations

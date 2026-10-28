@@ -75,7 +75,7 @@ class RepositorioElementos(RegistroDeElementos):
         """Borra las menciones, los enlaces y las asociaciones con etiquetas del mensaje.
 
         No borra las etiquetas mismas: son compartidas y otros mensajes pueden
-        estar usándolas. Lo usa la edición (CU0005, bloque 4.5) para empezar de
+        estar usándolas. Lo usa la edición (CU0005) para empezar de
         cero antes de volver a guardar lo que extrajo del texto nuevo.
         """
         conexion = obtener_conexion()
