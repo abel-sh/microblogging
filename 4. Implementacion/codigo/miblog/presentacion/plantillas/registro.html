@@ -1,6 +1,10 @@
 {% extends "base.html" %}
+{% from "_marca.html" import franja %}
 
 {% block titulo %}Crear cuenta · MiBlog{% endblock %}
+
+{# Franja de marca en el lugar de la barra. El <h1> de esta pantalla es "Crear cuenta". #}
+{% block barra %}{{ franja() }}{% endblock %}
 
 {% block contenido %}
 <div class="panel__cuerpo">
