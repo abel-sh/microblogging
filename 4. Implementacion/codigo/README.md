@@ -6,7 +6,7 @@ Sistema de microblogging para empleados de una empresa. Cada persona publica men
 
 | Función | Estado |
 |---|---|
-| Registrarse: nombre de usuario (hasta 15 caracteres), correo, clave (al menos 8 caracteres), nombre completo y, de forma opcional, descripción y foto (PNG o JPG) | Disponible |
+| Registrarse: nombre de usuario (hasta 15 caracteres: letras, números y guion bajo, y puntos o guiones solo en el medio), correo, clave (al menos 8 caracteres), nombre completo y, de forma opcional, descripción y foto (PNG o JPG) | Disponible |
 | Iniciar y cerrar sesión | Disponible |
 | Buscar usuarios por nombre de usuario o nombre completo (sin distinguir mayúsculas ni acentos) y seguirlos | Disponible |
 | Publicar un mensaje de hasta 140 caracteres | Disponible |
@@ -17,7 +17,7 @@ Sistema de microblogging para empleados de una empresa. Cada persona publica men
 
 - **Largo.** Hasta 140 caracteres, y no puede estar vacío. Se cuentan caracteres reales: un emoji cuenta 1 y un salto de línea cuenta 1. Si el mensaje se pasa, no se guarda ni se recorta: se avisa por cuántos caracteres se pasa y el texto queda en el formulario para corregirlo. Mientras se escribe, un contador muestra cuántos caracteres quedan (pasa a negativo cuando se excede el límite). Ese contador es lo único de la aplicación que usa JavaScript.
 - **Etiquetas.** `#` seguido de letras, números o guion bajo, como `#reunion`. Se guardan en minúsculas, así que `#Reunion` y `#reunion` son la misma. No cuenta si antes del `#` hay una letra o una barra (`C#`, o el `#seccion` de una dirección web).
-- **Menciones.** `@` seguido de un nombre de usuario, como `@juan.perez`. El nombre puede llevar punto o guion en el medio, pero no al final: en `hola @ana.` el punto es de la frase. La mención se guarda solo si existe un usuario activo con ese nombre; si no, se descarta sin avisar. `ana@empresa.com` no es una mención.
+- **Menciones.** `@` seguido de un nombre de usuario, como `@juan.perez`. El nombre puede llevar punto o guion en el medio, pero no al final: en `hola @ana.` el punto es de la frase. La mención se guarda solo si existe un usuario activo con ese nombre; si no, se descarta sin avisar. `ana@empresa.com` no es una mención. Por eso el registro solo acepta nombres de usuario con ese mismo formato: uno con espacios o símbolos no se podría mencionar.
 - **Enlaces.** Direcciones que empiezan con `http://` o `https://`. La puntuación del final no cuenta: en `mirá https://sitio.com.` el punto no es parte del enlace.
 - **Qué se ve.** Las etiquetas, menciones y enlaces se detectan y se guardan al publicar o al editar, pero en pantalla el texto se muestra tal cual lo escribió la persona: todavía no son clicables.
 - **Tablón.** Muestra cada mensaje con su autor, su fecha (`dd/mm/aaaa hh:mm`, hora del servidor) y su texto. Si no hay nada para mostrar, avisa y ofrece buscar usuarios para seguir.
@@ -59,6 +59,14 @@ Se hace con un archivo `.env` en esta carpeta (se crea copiando `.env.example`).
 | `DURACION_SESION_MINUTOS` | No | `60` | Cuánto dura una sesión abierta. |
 | `BASE_DE_DATOS` | No | `miblog.sqlite3` | Nombre del archivo de la base dentro de `instance/`, o una ruta absoluta. |
 | `TAMANO_MAXIMO_FOTO_BYTES` | No | `2097152` (2 MB) | Tamaño máximo de la foto de perfil. |
+| `ARCHIVO_DE_REGISTRO` | No | `miblog.log` | Nombre del archivo donde se anotan los errores inesperados, dentro de `instance/`, o una ruta absoluta. |
+
+## Errores y registro de eventos
+
+- **Errores que provoca quien usa el sistema.** Una dirección que no existe (404), un envío demasiado grande, como una foto muy pesada (413), o un pedido con el método equivocado (405) muestran una página de error con el mismo estilo que el resto, y no la pantalla de error de Flask. No son fallas del sistema, así que no se anotan.
+- **Errores inesperados.** Un fallo del programa muestra una página "Algo salió mal", sin detalles técnicos, y queda anotado en `instance/miblog.log` con fecha y hora, el método y la ruta del pedido, y el recorrido completo del error. Del pedido no se guarda nada más: nunca el contenido de los formularios, que puede traer una clave.
+- **Errores esperados.** Una clave incorrecta, un mensaje vacío o un usuario inexistente no son fallas: se avisan en la pantalla donde ocurren y no se anotan.
+- El archivo se crea la primera vez que hay algo para anotar. Los errores inesperados también salen por la consola donde corre `flask run`.
 
 ## Datos de demostración
 
@@ -89,9 +97,13 @@ python -m unittest discover -s pruebas -t . -v
 
 Para correr un solo archivo: `python -m unittest pruebas.test_tablon -v`.
 
-Cada prueba arma su propia aplicación con una base temporal, así que nunca toca `instance/miblog.sqlite3`. Cubren:
+Cada prueba arma su propia aplicación con una base temporal y su propio archivo de registro, así que nunca toca `instance/miblog.sqlite3` ni `instance/miblog.log`. En total son 262; la última línea de la salida tiene que decir `Ran 262 tests` y, abajo, `OK`. Cubren:
 
 - los extractores y el analizador de texto;
+- el registro: cada regla del formulario, incluido que el nombre de usuario tenga el formato que una mención reconoce, y que si el alta falla no queden ni la cuenta ni la foto;
+- iniciar y cerrar sesión: el aviso único para cualquier credencial incorrecta, la vigencia de la sesión, la limpieza de las vencidas y que el token deje de valer en el servidor al cerrar;
+- la búsqueda de usuarios (sin importar mayúsculas ni acentos, `%` y `_` como texto común, solo cuentas activas, sin mostrar el correo) y el seguimiento;
+- las páginas de error y el archivo de registro: que un error inesperado quede anotado con fecha y hora, sin detalles en pantalla ni datos de formularios, y que un 405 siga siendo 405;
 - los repositorios de mensajes, republicaciones y elementos;
 - la publicación de mensajes y el tablón, incluido que una publicación que falla a mitad de camino no deja nada guardado;
 - la edición y el borrado de mensajes (quién puede, qué pasa con las etiquetas, menciones, enlaces y republicaciones, y que si algo falla a mitad de camino no queda nada a medias);
@@ -110,6 +122,7 @@ miblog/
 │   ├── vistas_relaciones.py   búsqueda y seguimiento de usuarios
 │   ├── vistas_mensajes.py     tablón, publicación, edición, borrado y republicación
 │   ├── seguridad_web.py       guardia de sesión: protege las rutas privadas
+│   ├── errores_web.py         páginas de error y archivo de registro de errores inesperados
 │   ├── plantillas/            páginas HTML (Jinja2)
 │   └── estaticos/             estilos.css, contador.js, fuentes/ y fotos/ (fotos de perfil subidas)
 ├── logica/                  capa de lógica: las reglas del sistema
@@ -126,7 +139,7 @@ pruebas/                     pruebas automáticas (unittest)
 sembrar_datos.py             llena la base con datos de demostración
 requirements.txt             dependencias
 .env.example                 modelo del archivo de configuración
-instance/                    se crea al correr: acá queda la base de datos
+instance/                    se crea al correr: acá quedan la base de datos y el registro de errores (miblog.log)
 ```
 
 ## Arquitectura
@@ -167,18 +180,38 @@ SQLite, en `instance/miblog.sqlite3`, con las claves foráneas activadas. Las fe
 - Los errores de inicio de sesión son siempre el mismo mensaje ("Usuario o clave incorrectos."), para no revelar qué usuarios existen.
 - El texto de los mensajes se escapa automáticamente al mostrarse, y todas las consultas SQL usan parámetros.
 - Editar y borrar solo puede hacerlo el autor, y eso se verifica en el servidor dos veces: al abrir la página del diálogo y de nuevo al confirmar. Esconder un botón no es un control: un pedido hecho a mano por otra persona se rechaza. Republicar también se decide en el servidor, aunque el botón se vea.
-- Los cambios de datos (editar, borrar, republicar) solo se aceptan por POST; abrir un enlace nunca borra ni edita nada.
-- Límite conocido: no hay tokens contra CSRF; la protección es la cookie `SameSite=Lax`.
+- Los cambios de datos (editar, borrar, republicar, seguir) solo se aceptan por POST; abrir un enlace nunca borra ni edita nada.
+- Las páginas de error no muestran detalles técnicos, y el registro de errores no guarda lo que se escribió en los formularios.
+- Contra CSRF la protección es la cookie `SameSite=Lax`, no un token (ver los límites conocidos).
 
 ## Límites conocidos
 
-- El tablón no tiene paginación: muestra todos los mensajes.
-- Las etiquetas, menciones y enlaces no son clicables, y no hay búsqueda por etiqueta ni perfil de usuario.
-- Un mensaje con muchísimos saltos de línea ocupa una tarjeta muy alta.
-- Un borrador muy largo (más de unos 4 KB) no se conserva cuando vence la sesión.
-- Un doble clic en "Publicar" crea dos mensajes. Un doble clic en "Republicar" no duplica nada, pero el segundo clic muestra el aviso de que ya se republicó.
-- Guardar una edición sin cambiar el texto igual marca el mensaje como editado.
-- No se puede deshacer una republicación ni borrar solo la propia republicación.
-- Republicar con éxito no muestra ningún aviso: se nota porque la republicación aparece arriba de todo en el tablón.
-- El registro no restringe el formato del nombre de usuario: uno con espacios o símbolos no se puede mencionar.
-- No hay recuperación de clave ni edición del perfil.
+Lo que la aplicación no hace, o hace distinto de lo que se podría esperar, y por qué quedó así. Ninguno es un error escondido: son decisiones de alcance, y cada uno dice el motivo.
+
+**Mensajes y tablón**
+
+- **Sin paginación.** El tablón muestra todos los mensajes. Se midió con 5.000 mensajes y 500 republicaciones y responde en menos de 3 segundos, que es lo que se pedía; paginar no se pidió.
+- **Etiquetas, menciones y enlaces sin clic.** Se detectan y se guardan, pero no hay búsqueda por etiqueta ni perfil de usuario a donde llevar: ningún caso de uso de esta versión lo pide.
+- **Mensajes con muchos saltos de línea.** Uno con 140 saltos de línea es válido (el límite es de caracteres, y cada salto cuenta uno) y ocupa una tarjeta muy alta.
+- **Doble clic en "Publicar".** Crea dos mensajes: nada impide publicar dos textos iguales, así que el servidor no puede saber que fue un doble clic. En "Republicar" y "Borrar" el segundo clic es inofensivo: avisa que ya se republicó, o que el mensaje ya no está.
+- **Guardar una edición sin cambiar el texto.** Igual marca el mensaje como editado y mueve la fecha de edición, porque así lo pide el caso de uso de edición.
+- **Borrador solo al publicar.** Si la sesión vence mientras se *edita* un mensaje, el texto se pierde: el borrador se conserva únicamente al publicar. Y un borrador de más de unos 4 KB tampoco se conserva, porque viaja dentro de la cookie de sesión y los navegadores la limitan a ese tamaño.
+- **Una republicación no se deshace.** Tampoco se puede borrar solo la propia republicación: no existe ese caso de uso. Lo que sí hace desaparecer las republicaciones es borrar el mensaje original, y el diálogo de borrado lo avisa.
+- **Republicar no muestra un aviso de éxito.** El caso de uso lo resuelve mostrando la republicación arriba de todo en el tablón, y ahí se nota.
+
+**Cuentas y seguimiento**
+
+- **No se puede dejar de seguir.** Una vez que se sigue a alguien, el resultado queda como "Siguiendo", sin acción: dejar de seguir es otro caso de uso, fuera del alcance.
+- **No hay recuperación de clave, edición del perfil ni baja de cuentas.** Los tres son casos de uso fuera del alcance. La tabla `usuarios` tiene la columna `activo`, pero nada en la aplicación la cambia: una cuenta inactiva solo existe si se la carga por fuera, como hace `sembrar_datos.py`.
+- **El formulario de registro no cuenta caracteres.** El límite de 15 se informa con el texto de ayuda del campo y lo valida el servidor. El único JavaScript de la aplicación es el contador de los mensajes, y se decidió no sumar otro.
+
+**Seguridad**
+
+- **Sin tokens contra CSRF.** La protección es la cookie `SameSite=Lax`, y todo cambio de datos va por POST. Un token por formulario pediría una biblioteca más (por ejemplo Flask-WTF), y las dependencias están cerradas en Flask y python-dotenv.
+- **Sin bloqueo por intentos fallidos de inicio de sesión.** No estaba entre los requisitos de esta versión. Lo que sí hay: las claves se guardan con hash y salt, y el aviso es siempre el mismo.
+
+**Errores y registro**
+
+- **"Volver al inicio" lleva siempre a la pantalla de inicio de sesión**, aunque la sesión siga abierta: la página de error se muestra igual con sesión que sin ella, así que no elige un destino según quién sea. Para volver al tablón sin iniciar sesión de nuevo, hay que escribir la dirección `/tablon`.
+- **El registro solo anota errores inesperados.** El requisito también habla del proceso semanal de resumen por correo; ese proceso no está en esta versión, así que no hay nada que anotar de él.
+- **El archivo `instance/miblog.log` no se rota ni se limpia:** crece con cada error inesperado. Para el volumen de esta versión alcanza; si hiciera falta, se resuelve con `RotatingFileHandler`, de la biblioteca estándar.
