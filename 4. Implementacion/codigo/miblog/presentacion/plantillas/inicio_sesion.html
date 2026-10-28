@@ -1,11 +1,15 @@
 {% extends "base.html" %}
+{% from "_marca.html" import franja %}
 
 {% block titulo %}Iniciar sesión · MiBlog{% endblock %}
+
+{# Franja de marca en el lugar de la barra (que acá no existe: todavía no hay sesión).
+   Esta pantalla no tiene otro título, así que "MiBlog" de la franja es su <h1>. #}
+{% block barra %}{{ franja(True) }}{% endblock %}
 
 {% block contenido %}
 <div class="panel__cuerpo">
   <p class="sobretitulo">01 // Acceso</p>
-  <h1 class="titulo">MiBlog</h1>
 
   {# novalidate: el navegador no valida nada; los errores los decide el servidor (ca 2.2). #}
   <form class="formulario" method="post" action="/sesion/iniciar" novalidate>

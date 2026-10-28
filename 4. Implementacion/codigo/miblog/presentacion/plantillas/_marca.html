@@ -1,0 +1,18 @@
+{# Franja de marca de las pantallas sin sesión (inicio de sesión y registro).
+   Ocupa el lugar de la barra, que solo existe cuando hay una sesión iniciada.
+   Cada página tiene un único <h1>: si la pantalla ya trae el suyo (como "Crear cuenta"),
+   la franja se llama sin parámetro y el nombre va en un párrafo; si no (inicio de
+   sesión), se llama franja(True) y el nombre es el <h1>. #}
+{% macro franja(nombre_es_titulo=False) %}
+<header class="marca">
+  <span class="marca__simbolo" aria-hidden="true">#</span>
+  <div>
+    {% if nombre_es_titulo %}
+    <h1 class="marca__nombre">MiBlog</h1>
+    {% else %}
+    <p class="marca__nombre">MiBlog</p>
+    {% endif %}
+    <p class="marca__lema">Red interna · Tablón corporativo</p>
+  </div>
+</header>
+{% endmacro %}
