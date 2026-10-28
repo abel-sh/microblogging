@@ -4,7 +4,8 @@ crear_app() es el único módulo que conoce las cuatro capas: crea los
 repositorios, se los da a los controles, les da los controles a las vistas y
 registra las rutas. Son las 15 de la tabla de DISEÑO §2.5: las de la sesión
 (registro, inicio y cierre de sesión), buscar usuarios y seguirlos, el tablón y la
-publicación de mensajes, y editar, borrar y republicar.
+publicación de mensajes, y editar, borrar y republicar. También prepara el archivo
+de registro y las páginas de error.
 """
 
 
@@ -43,6 +44,7 @@ from miblog.logica.gestion_relaciones.control_busqueda_usuarios import ControlBu
 from miblog.logica.gestion_relaciones.control_seguimiento import ControlSeguimiento
 from miblog.logica.gestion_usuarios.control_autenticacion import ControlAutenticacion
 from miblog.logica.gestion_usuarios.control_registro import ControlRegistro
+from miblog.presentacion.errores_web import configurar_registro, registrar_manejadores_de_error
 from miblog.presentacion.seguridad_web import GuardiaSesion
 from miblog.presentacion.vistas_mensajes import (
     DialogoConfirmacionBorrado,
@@ -95,6 +97,15 @@ def crear_app() -> Flask:
     if not os.path.isabs(ruta_base):
         ruta_base = os.path.join(app.instance_path, ruta_base)
     app.config["BASE_DE_DATOS"] = ruta_base
+
+    # --- Errores y registro de eventos (RNF24) ---
+    # El archivo de registro también queda en instance/, igual que la base.
+    ruta_registro = os.environ.get("ARCHIVO_DE_REGISTRO", "miblog.log")
+    if not os.path.isabs(ruta_registro):
+        ruta_registro = os.path.join(app.instance_path, ruta_registro)
+    app.config["ARCHIVO_DE_REGISTRO"] = ruta_registro
+    configurar_registro(app, ruta_registro)
+    registrar_manejadores_de_error(app)
 
     # Una conexión por petición: se abre al pedirla y se cierra acá.
     app.teardown_appcontext(cerrar_conexion)
