@@ -18,6 +18,7 @@ el código de la aplicación, no para estas pruebas.
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 import unittest
@@ -104,13 +105,15 @@ class PruebaConApp(unittest.TestCase):
         carpeta = tempfile.TemporaryDirectory()
         self.addCleanup(carpeta.cleanup)
 
-        # La base y la clave secreta son de la prueba. load_dotenv() no pisa variables
-        # que ya existen, así que el .env de verdad no se usa.
+        # La base, el archivo de registro y la clave secreta son de la prueba.
+        # load_dotenv() no pisa variables que ya existen, así que el .env de verdad
+        # no se usa, y lo que la aplicación anote en el registro no ensucia instance/.
         entorno = patch.dict(
             os.environ,
             {
                 "SECRET_KEY": "clave-solo-para-pruebas",
                 "BASE_DE_DATOS": os.path.join(carpeta.name, "prueba.sqlite3"),
+                "ARCHIVO_DE_REGISTRO": os.path.join(carpeta.name, "prueba.log"),
             },
         )
         entorno.start()
@@ -118,8 +121,16 @@ class PruebaConApp(unittest.TestCase):
 
         self.app = crear_app()
         self.app.config["TESTING"] = True
+        self.addCleanup(self._cerrar_registro)
         with self.app.app_context():
             inicializar_base()
+
+    def _cerrar_registro(self) -> None:
+        """Cierra el archivo de registro de esta aplicación, si una prueba lo abrió."""
+        for manejador in list(self.app.logger.handlers):
+            if isinstance(manejador, logging.FileHandler):
+                self.app.logger.removeHandler(manejador)
+                manejador.close()
 
 
 class PruebaConBase(PruebaConApp):
